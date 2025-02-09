@@ -39,7 +39,8 @@ function formatMessage(message) {
     .replace(/###\s+(.+)/g, '<h3 class="heading">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code class="inline-code">$1</code>')
+    // Fixed inline code replacement with HTML escaping
+    .replace(/`(.+?)`/g, (_, code) => `<code class="inline-code">${escapeHtml(code)}</code>`)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
     .replace(/\n\s*-\s+/g, '\n<li>')
     .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
