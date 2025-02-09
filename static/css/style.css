@@ -175,10 +175,49 @@ font-size: 1rem;
     overflow: hidden;
 }
 
+/* Updated line numbers styles */
+.line-numbers {
+    position: relative;
+    padding-left: 3.8em !important;
+    counter-reset: linenumber;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    left: -3.8em;
+    width: 3em;
+    border-right: 1px solid #4a4a4a;
+    padding-right: 0.5em;
+    top: 0; /* Changed from 1.5em */
+}
+
+.line-numbers-rows > span {
+    counter-increment: linenumber;
+    display: block;
+    position: relative;
+    padding-right: 0.5em;
+    text-align: right;
+}
+
+/* Force show line number for single-line blocks */
+.line-numbers-rows > span:only-child::before {
+    content: "1" !important;
+}
+
+.line-numbers-rows > span::before {
+    content: counter(linenumber);
+    color: #999; /* Improved contrast */
+    display: block;
+    font-size: 0.9em;
+    padding-right: 0.8em;
+}
+
 pre[class*="language-"] {
+    position: relative;
     margin: 0;
     padding: 1.5em !important;
     background: #1e1e1e !important;
+    overflow: visible;
 }
 
 .code-header {
@@ -220,13 +259,14 @@ pre[class*="language-"] {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
+/* Updated copy feedback colors */
 .copy-button.copied {
-    background: #4CAF50;
+    background: #2ecc71 !important;
     border-color: #45a049;
 }
 
 .copy-button.copy-error {
-    background: #f44336;
+    background: #e74c3c !important;
     border-color: #d32f2f;
 }
 
@@ -242,20 +282,6 @@ pre[class*="language-"] {
 
 .check-icon {
     color: white;
-}
-
-.code-header {
-    padding: 6px 10px;
-    background: #2d2d2d99;
-    backdrop-filter: blur(4px);
-    border-bottom: 1px solid #ffffff1a;
-}
-
-.code-lang {
-    color: #ce9178;
-    font-size: 0.85em;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .code-block {
@@ -316,8 +342,10 @@ a {
     transition: opacity 0.3s ease;
 }
 
+/* Enhanced loading message transition */
 .loading-message-remove {
     opacity: 0;
+    transition: opacity 0.3s ease-out;
 }
 
 .loading-dots div {
