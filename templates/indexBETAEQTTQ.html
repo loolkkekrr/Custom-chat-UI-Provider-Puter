@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepseek Chat</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            background-color: #1e1e1e;
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+             height: calc(100vh - 40px);
+             display: flex;
+            flex-direction: column;
+        }
+
+        .chat-box {
+            border: 1px solid #333;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background-color: #292929;
+            border-radius: 4px;
+            flex-grow: 1;
+
+        }
+
+        .message {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+             word-wrap: break-word; /* Перенос слов для всех сообщений */
+            overflow-wrap: break-word; /* На случай очень длинных слов без пробелов */
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            text-align: right;
+            margin-left: auto;
+            max-width: 70%;
+        }
+
+        .ai-message {
+            background-color: #444654;
+            color: white;
+            text-align: left;
+            margin-right: auto;
+            max-width: 70%;
+        }
+
+        .loading-message {
+            display: flex;
+            align-items: center;
+            background-color: #444654;
+            color: white;
+            text-align: left;
+            margin-right: auto;
+            max-width: 70%;
+
+        }
+          .loading-message img {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+      .input-container {
+            display: flex;
+            align-items: center;
+
+        }
+        #message-input {
+            width: calc(100% - 80px);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background-color: #292929;
+            color: #ffffff;
+            margin-right: 5px;
+              box-sizing: border-box;
+
+        }
+
+        #model-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background-color: #292929;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        #send-button {
+            width: 100px;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+             box-sizing: border-box;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+         /* Стили для блока кода */
+        .code-block {
+            background-color: #282c34; /* Темный фон для блока кода */
+            color: #abb2bf; /* Светлый текст для блока кода */
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace; /* Моноширинный шрифт */
+            overflow-x: auto; /* Горизонтальная прокрутка, если код не помещается */
+            white-space: pre; /* Сохраняем пробелы и переносы строк */
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Чат с Deepseek</h1>
+        <label for="model-select">Выберите модель:</label>
+        <select id="model-select">
+            <option value="deepseek-chat">deepseek-chat</option>
+            <option value="deepseek-coder">deepseek-coder</option>
+        </select>
+        <div class="chat-box" id="chat-box">
+            </div>
+
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Введите сообщение...">
+            <button id="send-button">Отправить</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const modelSelect = document.getElementById('model-select');
+
+        let loadingMessage = null;
+
+        // Функция для форматирования текста с блоками кода
+        function formatMessage(message) {
+            // Заменяем ``` на <div> с классом code-block
+            let formattedMessage = message.replace(/```([\s\S]*?)```/g, '<div class="code-block">$1</div>');
+              //  formattedMessage = formattedMessage.replace(/\n/g, '<br>'); // Заменяем переносы строк на <br> (уже не нужно)
+            return formattedMessage;
+        }
+
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', isUser ? 'user-message' : 'ai-message');
+            // Используем innerHTML вместо textContent, чтобы применить форматирование
+            messageDiv.innerHTML = formatMessage(message); // Форматируем сообщение перед добавлением
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showLoading() {
+            loadingMessage = document.createElement('div');
+            loadingMessage.classList.add('message', 'loading-message');
+            const loadingGif = document.createElement('img');
+            loadingGif.src = '/static/loading.gif';
+            loadingGif.alt = 'Loading...';
+            loadingMessage.appendChild(loadingGif);
+            loadingMessage.appendChild(document.createTextNode('Генерирую ответ...'));
+            chatBox.appendChild(loadingMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function hideLoading() {
+            if (loadingMessage) {
+                chatBox.removeChild(loadingMessage);
+                loadingMessage = null;
+            }
+        }
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            const selectedModel = modelSelect.value;
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+
+            showLoading();
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message, model: selectedModel })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    addMessage('Ошибка: ' + data.error, false);
+                } else {
+                    addMessage(data.response, false);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                addMessage('Произошла ошибка при отправке сообщения.', false);
+            });
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
