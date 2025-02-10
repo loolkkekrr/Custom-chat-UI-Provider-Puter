@@ -116,7 +116,42 @@ h1 {
     margin: 0.8rem 0;
     line-height: 1.7;
 }
+.ai-message {
+    position: relative;
+    padding-bottom: 30px;
+}
+.regenerate-container {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    gap: 8px;
+}
 
+.ai-message:hover .regenerate-container {
+    opacity: 1;
+}
+
+.regenerate-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.regenerate-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.regenerate-button img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
 .input-container {
     display: flex;
     gap: 0.75rem;
@@ -348,6 +383,65 @@ a {
     transition: opacity 0.3s ease-out;
 }
 
+.regenerate-container {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    gap: 8px;
+}
+.regenerate-button svg {
+    width: 20px;
+    height: 20px;
+    fill: #fff; /* Белый цвет */
+    transition: opacity 0.2s ease;
+}
+
+.regenerate-button:hover svg {
+    opacity: 0.8;
+}
+.ai-message:hover .regenerate-container {
+    opacity: 1;
+}
+
+.regenerate-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+.regenerate-container {
+    display: none;
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    gap: 8px;
+}
+
+.regenerate-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.regenerate-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.regenerate-button img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
 .loading-dots div {
     width: 6px;
     height: 6px;

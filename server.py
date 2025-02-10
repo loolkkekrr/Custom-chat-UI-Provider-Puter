@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 import requests
 import json
 import os
-
 app = Flask(__name__)
 PUTER_API_TOKEN = os.getenv("puter")
 
@@ -10,7 +9,7 @@ PUTER_API_TOKEN = os.getenv("puter")
 def static_files(filename):
     return send_from_directory(os.path.join(app.root_path, 'static'), filename)
 
-def call_deepseek_api(messages, model="deepseek-chat"):
+def call_deepseek_api(messages, model="deepseek-reasoner"):
     url = "https://api.puter.com/drivers/call"
     headers = {
         "Authorization": "Bearer " + str(PUTER_API_TOKEN),
@@ -34,6 +33,7 @@ def call_deepseek_api(messages, model="deepseek-chat"):
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         result = response.json()
+        print(result['metadata'])
         return result['result']['message']['content']
 
     except requests.exceptions.RequestException as e:
