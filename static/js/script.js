@@ -161,21 +161,28 @@ function hideLoading() {
     }
 }
 
+let chatHistory = [];
+
 function sendMessage() {
     const message = messageInput.value.trim();
     const selectedModel = modelSelect.value;
     if (!message) return;
 
+    // Добавляем сообщение пользователя в историю
+    chatHistory.push({ role: "user", content: message });
+
+    // Отображаем сообщение пользователя в чате
     addMessage(message, true);
     messageInput.value = '';
     showLoading();
 
+    // Отправляем всю историю сообщений на сервер
     fetch('/chat', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: message, model: selectedModel })
+        body: JSON.stringify({ messages: chatHistory, model: selectedModel })
     })
     .then(response => response.json())
     .then(data => {
@@ -183,6 +190,8 @@ function sendMessage() {
         if (data.error) {
             addMessage('Ошибка: ' + data.error, false);
         } else {
+            // Добавляем ответ AI в историю
+            chatHistory.push({ role: "assistant", content: data.response });
             addMessage(data.response, false);
         }
     })
