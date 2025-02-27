@@ -142,31 +142,31 @@ function generateCodeBlockHtml(code) {
 let currentRegeneration = false;
 
 function regenerateLastResponse() {
-    if (currentRegeneration) return;
+    // If already generating or loading, don't allow another regeneration
+    if (isLoading || currentRegeneration) return;
+    
     currentRegeneration = true;
 
-    // Удаляем последний ответ ИИ из истории
+    // Remove the last AI response from chat history
     const lastAssistantIndex = chatHistory.findLastIndex(msg => msg.role === "assistant");
     if (lastAssistantIndex !== -1) {
         chatHistory.splice(lastAssistantIndex, 1);
     }
 
-    // Удаляем последнее сообщение ИИ из DOM
+    // Remove the last AI message from DOM
     const aiMessages = document.querySelectorAll('.ai-message');
     if (aiMessages.length > 0) {
         aiMessages[aiMessages.length - 1].remove();
     }
 
-    updateRegenerateButtons(); // Обновляем кнопки после удаления
-
-    // Находим последнее сообщение пользователя
+    // Find the last user message
     const lastUserMessage = chatHistory[chatHistory.length - 1];
     if (!lastUserMessage || lastUserMessage.role !== "user") {
         currentRegeneration = false;
         return;
     }
 
-    // Отправляем запрос с текущей историей
+    // Show loading state (which will hide regenerate buttons)
     showLoading();
 
     const selectedOption = JSON.parse(modelSelect.value);
@@ -178,7 +178,7 @@ function regenerateLastResponse() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             messages: chatHistory,
-            provider: provider, // Добавляем провайдера
+            provider: provider,
             model: model 
         })
     })
@@ -293,6 +293,14 @@ function showLoading() {
     isLoading = true;
     disableSendButton(); // Отключаем кнопку отправки
     
+    // Hide the regenerate button when loading starts
+    const regenerateContainers = document.querySelectorAll('.regenerate-container');
+    if (regenerateContainers.length > 0) {
+        regenerateContainers.forEach(container => {
+            container.style.display = 'none';
+        });
+    }
+    
     setTimeout(() => {
         loadingElement = document.createElement('div');
         loadingElement.className = 'message ai-message loading-message';
@@ -317,6 +325,9 @@ function hideLoading() {
             isLoading = false;
             loadingElement = null;
             enableSendButton(); // Включаем кнопку отправки
+            
+            // Restore the regenerate button for the last AI message
+            updateRegenerateButtons();
         }, 300);
     }
 }
