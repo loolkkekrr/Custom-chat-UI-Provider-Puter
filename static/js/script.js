@@ -7,7 +7,42 @@ let loadingElement = null;
 
 // Initialize Prism plugins
 Prism.plugins.lineNumbers.assumeViewportIndependence = false;
+document.addEventListener('DOMContentLoaded', () => {
+    loadModels();
+});
 
+function loadModels() {
+    fetch('/models')
+        .then(response => response.json())
+        .then(models => {
+            const modelSelect = document.getElementById('model-select');
+            modelSelect.innerHTML = ''; // Clear existing options
+            
+            // Flatten the array of objects structure from models.json
+            models.forEach(modelGroup => {
+                Object.entries(modelGroup).forEach(([name, config]) => {
+                    const option = document.createElement('option');
+                    option.textContent = name;
+                    option.value = JSON.stringify({
+                        provider: config.provider,
+                        model: config.model
+                    });
+                    modelSelect.appendChild(option);
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error loading models:', error);
+            // Add a default option in case models fail to load
+            const option = document.createElement('option');
+            option.textContent = 'Claude 3.7 Thinking (Default)';
+            option.value = JSON.stringify({
+                provider: "openrouter",
+                model: "openrouter:anthropic/claude-3.7-sonnet:thinking"
+            });
+            modelSelect.appendChild(option);
+        });
+}
 const sanitizeConfig = {
     ALLOWED_TAGS: ['div', 'pre', 'code', 'span', 'button', 'svg', 'path', 'strong', 'em', 'a', 'img'],
     ALLOWED_ATTR: ['class', 'onclick', 'href', 'target', 'viewbox', 'd', 'fill', 'src', 'alt'],

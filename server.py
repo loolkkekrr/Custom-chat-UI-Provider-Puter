@@ -8,6 +8,16 @@ PUTER_API_TOKEN = os.getenv("puter")
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+# Add this new route to serve the models.json file
+@app.route("/models")
+def get_models():
+    try:
+        with open('models.json', 'r') as f:
+            models = json.load(f)
+            return jsonify(models)
+    except Exception as e:
+        print(f"Error loading models: {e}")
+        return jsonify([]), 500
 def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking"):
 #def call_deepseek_api(messages, model="deepseek-reasoner"):
     url = "https://api.puter.com/drivers/call"

@@ -1,0 +1,12 @@
+[
+    {
+      "Claude 3.7 Thinking": {
+        "model": "openrouter:anthropic/claude-3.7-sonnet:thinking",
+        "provider": "openrouter"
+      },
+      "Deepseek Thinking": {
+        "model": "deepseek-reasoner",
+        "provider": "deepseek"
+      }
+    }
+  ]
