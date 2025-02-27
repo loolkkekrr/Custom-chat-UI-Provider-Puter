@@ -175,6 +175,19 @@ border-color: var(--primary);
 box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
+#send-button:disabled {
+    background: #cccccc1c; /* Серый цвет фона для отключенной кнопки */
+    color: #8888883d; /* Цвет текста для отключенной кнопки */
+    cursor: not-allowed; /* Курсор, показывающий, что действие недоступно */
+    transform: none; /* Отменяем эффект поднятия кнопки */
+    opacity: 0.7; /* Делаем кнопку немного прозрачной */
+  }
+  
+  #send-button:disabled:hover {
+    background: #c70b0b46; /* Предотвращаем изменение цвета при наведении */
+    transform: none; /* Предотвращаем эффект поднятия при наведении */
+  }
+
 #send-button {
 padding: 0.75rem 1.5rem;
 background: var(--primary);

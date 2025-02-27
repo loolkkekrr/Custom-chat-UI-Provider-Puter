@@ -24,6 +24,15 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function disableSendButton() {
+    sendButton.disabled = true;
+    sendButton.classList.add('disabled');
+}
+
+function enableSendButton() {
+    sendButton.disabled = false;
+    sendButton.classList.remove('disabled');
+}
 function formatMessage(message) {
     const codeBlocks = [];
     const placeholderPrefix = '🄲🄱🄻🄾🄲🄺';
@@ -102,14 +111,17 @@ function regenerateLastResponse() {
     // Отправляем запрос с текущей историей
     showLoading();
 
+    const selectedOption = JSON.parse(modelSelect.value);
+    const provider = selectedOption.provider;
+    const model = selectedOption.model;
+
     fetch('/chat', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            messages: chatHistory, 
-            model: modelSelect.value 
+            messages: chatHistory,
+            provider: provider, // Добавляем провайдера
+            model: model 
         })
     })
     .then(response => response.json())
@@ -219,8 +231,10 @@ function showCopyFeedback(button) {
 
 function showLoading() {
     if (isLoading) return;
-
+    
     isLoading = true;
+    disableSendButton(); // Отключаем кнопку отправки
+    
     setTimeout(() => {
         loadingElement = document.createElement('div');
         loadingElement.className = 'message ai-message loading-message';
@@ -244,6 +258,7 @@ function hideLoading() {
             loadingElement.remove();
             isLoading = false;
             loadingElement = null;
+            enableSendButton(); // Включаем кнопку отправки
         }, 300);
     }
 }
@@ -251,24 +266,30 @@ function hideLoading() {
 let chatHistory = [];
 
 function sendMessage() {
+    // Проверяем, идет ли уже генерация ответа
+    if (isLoading) {
+        // Если идет генерация, не позволяем отправить новое сообщение
+        return;
+    }
+    
     const message = messageInput.value.trim();
-    const selectedOption = JSON.parse(modelSelect.value); // Парсим JSON
+    const selectedOption = JSON.parse(modelSelect.value);
     const provider = selectedOption.provider;
     const model = selectedOption.model;
     
     if (!message) return;
-
+    
     chatHistory.push({ role: "user", content: message });
     addMessage(message, true);
     messageInput.value = '';
     showLoading();
-
+    
     fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            messages: chatHistory, 
-            provider: provider, // Добавляем провайдера
+            messages: chatHistory,
+            provider: provider,
             model: model 
         })
     })
@@ -289,6 +310,7 @@ function sendMessage() {
         addMessage('Произошла ошибка при отправке сообщения.', false);
     });
 }
+
 
 sendButton.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', function(event) {
