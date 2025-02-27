@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deepseek Chat</title>
+    <title>Puter Chat</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/@fontsource/fira-code@4.2.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>Deepseek AI</h1>
+        <h1>Puter Chat</h1>
         <select id="model-select">
-            <option value="deepseek-chat">Deepseek Reasoner</option>
-            <option value="deepseek-coder">Deepseek Chat (Недоступен)</option>
+            <option value='{"provider":"openrouter","model":"openrouter:anthropic/claude-3.7-sonnet:thinking"}'>Claude 3.7 Thinking</option>
+            <option value='{"provider":"deepseek","model":"deepseek-reasoner"}'>Deepseek Thinking</option>
         </select>
 
         <div class="chat-box" id="chat-box">

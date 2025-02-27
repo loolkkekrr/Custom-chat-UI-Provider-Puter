@@ -8,8 +8,8 @@ PUTER_API_TOKEN = os.getenv("puter")
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory(os.path.join(app.root_path, 'static'), filename)
-
-def call_deepseek_api(messages, model="deepseek-reasoner"):
+def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking"):
+#def call_deepseek_api(messages, model="deepseek-reasoner"):
     url = "https://api.puter.com/drivers/call"
     headers = {
         "Authorization": "Bearer " + str(PUTER_API_TOKEN),
@@ -18,9 +18,11 @@ def call_deepseek_api(messages, model="deepseek-reasoner"):
         "Origin": "https://docs.puter.com"
     }
 
+    print("МОДЕЛЬ" + model)
+    print("ПРОВАЙДЕР:" + provider)
     payload = {
         "interface": "puter-chat-completion",
-        "driver": "deepseek",
+        "driver": str(provider),
         "test_mode": False,
         "method": "complete",
         "args": {
@@ -52,7 +54,9 @@ def index():
 def chat():
     data = request.get_json()
     messages = data.get("messages")
-    model = data.get("model", "deepseek-chat")
+    provider = data.get("provider")  # Получаем провайдера
+    model = data.get("model")
+
 
     if not messages or not isinstance(messages, list):
         return jsonify({"error": "Некорректный формат сообщений"}), 400
@@ -64,7 +68,7 @@ def chat():
         if msg["role"] not in ("user", "assistant"):
             return jsonify({"error": "Недопустимая роль сообщения"}), 400
 
-    ai_response = call_deepseek_api(messages, model)
+    ai_response = call_deepseek_api(messages, provider, model)
     return jsonify({"response": ai_response})
 
 if __name__ == "__main__":

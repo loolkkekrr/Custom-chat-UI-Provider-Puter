@@ -252,24 +252,25 @@ let chatHistory = [];
 
 function sendMessage() {
     const message = messageInput.value.trim();
-    const selectedModel = modelSelect.value;
+    const selectedOption = JSON.parse(modelSelect.value); // Парсим JSON
+    const provider = selectedOption.provider;
+    const model = selectedOption.model;
+    
     if (!message) return;
 
-    // Добавляем сообщение пользователя в историю
     chatHistory.push({ role: "user", content: message });
-
-    // Отображаем сообщение пользователя в чате
     addMessage(message, true);
     messageInput.value = '';
     showLoading();
 
-    // Отправляем всю историю сообщений на сервер
     fetch('/chat', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ messages: chatHistory, model: selectedModel })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            messages: chatHistory, 
+            provider: provider, // Добавляем провайдера
+            model: model 
+        })
     })
     .then(response => response.json())
     .then(data => {
