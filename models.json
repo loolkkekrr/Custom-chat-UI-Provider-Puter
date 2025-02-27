@@ -1,6 +1,6 @@
 [
     {
-      "Claude 3.7 Thinking": {
+      "Claude 3.7 (Thinking Mode)": {
         "model": "openrouter:anthropic/claude-3.7-sonnet:thinking",
         "provider": "openrouter"
       },
@@ -12,8 +12,12 @@
         "model": "grok-beta",
         "provider": "xai"
       },
-      "Deepseek Thinking": {
+      "Deepseek (Thinking Mode)": {
         "model": "deepseek-reasoner",
+        "provider": "deepseek"
+      },
+      "Deepseek": {
+        "model": "deepseek-chat",
         "provider": "deepseek"
       }
     }
