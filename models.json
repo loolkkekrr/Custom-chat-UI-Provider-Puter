@@ -4,6 +4,14 @@
         "model": "openrouter:anthropic/claude-3.7-sonnet:thinking",
         "provider": "openrouter"
       },
+      "O3 Mini": {
+        "model": "o3-mini",
+        "provider": "openai-completion"
+      },
+      "Grok 2": {
+        "model": "grok-beta",
+        "provider": "xai"
+      },
       "Deepseek Thinking": {
         "model": "deepseek-reasoner",
         "provider": "deepseek"
