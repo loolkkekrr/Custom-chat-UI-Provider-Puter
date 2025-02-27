@@ -159,20 +159,25 @@ h1 {
 }
 
 #message-input {
-flex: 1;
-padding: 1rem;
-border: 1px solid var(--border);
-border-radius: 0.75rem;
-background: var(--surface);
-color: var(--text-primary);
-font-size: 1rem;
-transition: all 0.2s ease;
+    flex: 1;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    resize: none; /* Prevents manual resizing */
+    min-height: 24px;
+    max-height: 150px; /* Increased maximum height to allow for multiple lines */
+    overflow-y: auto; /* Add scrollbar when content exceeds max height */
+    font-family: inherit; /* Make sure it uses the same font as the rest of the page */
+    line-height: 1.5;
 }
-
 #message-input:focus {
-outline: none;
-border-color: var(--primary);
-box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
 #send-button:disabled {

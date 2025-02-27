@@ -5,12 +5,35 @@ const modelSelect = document.getElementById('model-select');
 let isLoading = false;
 let loadingElement = null;
 
+
 // Initialize Prism plugins
 Prism.plugins.lineNumbers.assumeViewportIndependence = false;
 document.addEventListener('DOMContentLoaded', () => {
     loadModels();
+    const textarea = document.getElementById('message-input');
+    
+    // Function to automatically resize textarea based on content
+    function autoResizeTextarea() {
+        textarea.style.height = 'auto'; // Reset height
+        const newHeight = Math.min(150, Math.max(24, textarea.scrollHeight - 64));
+        textarea.style.height = newHeight + 'px';
+    }
+    
+    // Add event listeners for input changes
+    textarea.addEventListener('input', autoResizeTextarea);
+    
+    // Initial resize
+    autoResizeTextarea();
+    
+    // Allow Enter to submit, but Shift+Enter for new line
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent default behavior (new line)
+            document.getElementById('send-button').click(); // Simulate button click
+            autoResizeTextarea()
+        }
+    });
 });
-
 function loadModels() {
     fetch('/models')
         .then(response => response.json())
@@ -348,8 +371,3 @@ function sendMessage() {
 
 
 sendButton.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-});
