@@ -11,7 +11,7 @@ Deepseek (С DeepThink)
 O3 Mini
 Grok 2
 
-Весь код написан исключительно с помощью DeepSeek, Gemini 2.0 Flash+Pro Experimental, Claude 3.7.
+Весь код написан исключительно с помощью DeepSeek, Gemini 2.0 Flash+Pro, Gemini 2.5 Pro, Claude 3.7.
 
 # В разработке
 
