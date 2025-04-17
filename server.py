@@ -20,12 +20,11 @@ def get_models():
         return jsonify([]), 500
 def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking"):
 #def call_deepseek_api(messages, model="deepseek-reasoner"):
-    print(PUTER_API_TOKEN)
     url = "https://api.puter.com/drivers/call"
     headers = {
         "Authorization": "Bearer " + str(PUTER_API_TOKEN),
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
         "Origin": "https://docs.puter.com"
     }
 
