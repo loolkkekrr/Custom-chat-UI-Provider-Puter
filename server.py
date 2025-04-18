@@ -38,7 +38,7 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
         "args": {
             "max_completion_tokens": int(max_tokens),
             "temperature": int(temperature),
-            "messages": messages,  # Теперь принимаем полную историю сообщений
+            "messages": messages,
             "model": model
         }
     }
