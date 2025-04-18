@@ -18,23 +18,23 @@ def get_models():
     except Exception as e:
         print(f"Error loading models: {e}")
         return jsonify([]), 500
-def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking"):
+def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking", max_tokens=2048):
 #def call_deepseek_api(messages, model="deepseek-reasoner"):
     url = "https://api.puter.com/drivers/call"
     headers = {
         "Authorization": "Bearer " + str(PUTER_API_TOKEN),
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
         "Origin": "https://docs.puter.com"
     }
-
-    print("МОДЕЛЬ" + model)
+    print("МАКС. ТОКЕНОВ: " + str(max_tokens))
+    print("МОДЕЛЬ: " + model)
     print("ПРОВАЙДЕР:" + provider)
     payload = {
         "interface": "puter-chat-completion",
         "driver": str(provider),
         "test_mode": False,
-        "max_tokens": 131072,
+        "max_tokens": int(max_tokens),
         "method": "complete",
         "args": {
             "messages": messages,  # Теперь принимаем полную историю сообщений
@@ -66,6 +66,7 @@ def chat():
     data = request.get_json()
     messages = data.get("messages")
     provider = data.get("provider")  # Получаем провайдера
+    max_tokens = data.get("max_tokens")
     model = data.get("model")
 
 
@@ -79,7 +80,7 @@ def chat():
         if msg["role"] not in ("user", "assistant"):
             return jsonify({"error": "Недопустимая роль сообщения"}), 400
 
-    ai_response = call_deepseek_api(messages, provider, model)
+    ai_response = call_deepseek_api(messages, provider, model, max_tokens)
     return jsonify({"response": ai_response})
 
 if __name__ == "__main__":

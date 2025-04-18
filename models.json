@@ -1,8 +1,9 @@
 [
     {
-      "Claude 3.7 (Thinking Mode)": {
-        "model": "openrouter:anthropic/claude-3.7-sonnet:thinking",
-        "provider": "openrouter"
+      "Claude 3.7": {
+        "model": "openrouter:anthropic/claude-3.7-sonnet",
+        "provider": "openrouter",
+        "thinking_model": "openrouter:anthropic/claude-3.7-sonnet:thinking"
       },
       "O3 Mini": {
         "model": "o3-mini",
@@ -12,13 +13,10 @@
         "model": "grok-beta",
         "provider": "xai"
       },
-      "Deepseek (Thinking Mode)": {
-        "model": "deepseek-reasoner",
-        "provider": "deepseek"
-      },
       "Deepseek": {
         "model": "deepseek-chat",
-        "provider": "deepseek"
+        "provider": "deepseek",
+        "thinking_model": "deepseek-reasoner"
       }
     }
   ]
