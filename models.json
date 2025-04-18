@@ -1,22 +1,86 @@
 [
-    {
+  {
+    "OpenAI": {
+      "o4 Mini": {
+        "model": "o4-mini"
+      },
+      "o3": {
+        "model": "o3-mini"
+      },
+      "o3 Mini": {
+        "model": "o3-mini"
+      },
+      "o1": {
+        "model": "o1"
+      },
+      "o1 Pro": {
+        "model": "o1-pro"
+      },
+      "o1 Mini": {
+        "model": "o1-mini"
+      },
+      "GPT-4.5 Preview": {
+        "model": "gpt-4.5-preview"
+      },
+      "GPT-4.1": {
+        "model": "gpt-4.1-nano"
+      },
+      "GPT-4.1 Mini": {
+        "model": "gpt-4.1-mini"
+      },
+      "GPT-4.1 Nano": {
+        "model": "gpt-4.1-nano"
+      },
+      "GPT-4o": {
+        "model": "gpt-4o"
+      },
+      "GPT-4o Mini": {
+        "model": "gpt-4o-mini"
+      },
+      "GPT-4 Turbo": {
+        "model": "openrouter:openai/gpt-4-turbo",
+        "provider": "openrouter"
+      },
+      "GPT-4": {
+        "model": "openrouter:openai/gpt-4",
+        "provider": "openrouter"
+      },
+      "GPT-3.5 Turbo": {
+        "model": "openrouter:openai/gpt-3.5-turbo",
+        "provider": "openrouter"
+      },
+      "provider": "openai-completion"
+    },
+    "Anthropic": {
       "Claude 3.7": {
         "model": "openrouter:anthropic/claude-3.7-sonnet",
-        "provider": "openrouter",
         "thinking_model": "openrouter:anthropic/claude-3.7-sonnet:thinking"
       },
-      "O3 Mini": {
-        "model": "o3-mini",
-        "provider": "openai-completion"
+      "Claude 3.5": {
+        "model": "openrouter:anthropic/claude-3.5-sonnet"
       },
-      "Grok 2": {
+      "provider": "openrouter"
+    },
+    "Grok": {
+      "Grok 3": {
         "model": "grok-beta",
         "provider": "xai"
       },
-      "Deepseek": {
+      "Grok 2": {
+        "model": "x-ai/grok-2-1212"
+      },
+      "provider": "openrouter"
+    },
+    "Deepseek": {
+      "Deepseek V3": {
         "model": "deepseek-chat",
-        "provider": "deepseek",
         "thinking_model": "deepseek-reasoner"
-      }
+      },
+      "Deepseek R1": {
+        "model": "openrouter:deepseek/deepseek-r1",
+        "provider": "openrouter"
+      },
+      "provider": "deepseek"
     }
-  ]
+  }
+]

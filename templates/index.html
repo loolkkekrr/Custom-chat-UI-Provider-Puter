@@ -31,6 +31,12 @@
             --code-bg-light: #f5f2f0; /* GitHub-like */
             --code-text-dark: #abb2bf;
             --code-text-light: #333;
+            --modal-bg-dark: #242424;
+            --modal-bg-light: #fdfdfd;
+            --hover-dark: rgba(255, 255, 255, 0.1);
+            --hover-light: rgba(0, 0, 0, 0.05);
+            --active-dark: rgba(124, 77, 255, 0.2);
+            --active-light: rgba(124, 77, 255, 0.15);
         }
 
         body {
@@ -119,15 +125,18 @@
         }
 
         .chat-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--hover-dark);
         }
 
         .light-theme .chat-item:hover {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: var(--hover-light);
         }
 
         .chat-item.active {
-            background-color: rgba(124, 77, 255, 0.2);
+            background-color: var(--active-dark);
+        }
+        .light-theme .chat-item.active {
+            background-color: var(--active-light);
         }
 
         .chat-icon {
@@ -169,11 +178,11 @@
         }
 
         .theme-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--hover-dark);
         }
 
         .light-theme .theme-toggle:hover {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: var(--hover-light);
         }
 
         .main-content {
@@ -236,11 +245,11 @@
         }
 
         .settings-btn:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--hover-dark);
         }
 
         .light-theme .settings-btn:hover {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: var(--hover-light);
         }
 
         .chat-container {
@@ -288,14 +297,36 @@
             margin-left: auto;
             border-top-right-radius: 2px;
         }
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
 
+        .toast-notification.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .light-theme .toast-notification {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
         .light-theme .user-message {
             background-color: var(--chat-user-light);
         }
         .assistant-message pre[class*="language-"] {
-            /* Use theme background */
             background-color: var(--code-bg-dark);
-            /* Keep padding/margin/radius */
             padding: 1em;
             margin: 1em 0;
             border-radius: 6px;
@@ -304,8 +335,7 @@
             font-size: 0.9em;
             line-height: 1.5;
             white-space: pre;
-            /* Let Prism theme handle text color primarily */
-             color: var(--code-text-dark); /* Fallback/base color */
+            color: var(--code-text-dark);
         }
         .light-theme .assistant-message pre[class*="language-"] {
              background-color: var(--code-bg-light);
@@ -316,88 +346,38 @@
         .assistant-message {
             background-color: var(--chat-ai-dark);
             margin-right: auto;
-            border-top-left-radius: 0px;    
+            border-top-left-radius: 0px;
         }
         .assistant-message pre[class*="language-"] > code[class*="language-"] {
-            font-family: inherit; /* Inherit from pre */
+            font-family: inherit;
             background: none;
             padding: 0;
             font-size: inherit;
             line-height: inherit;
-            white-space: inherit; /* Important: inherit from pre */
-            color: inherit; /* Let Prism tokens override */
+            white-space: inherit;
+            color: inherit;
         }
 
-        .assistant-message > *:first-child {
-            margin-top: 0;
-        }
+        .assistant-message > *:first-child { margin-top: 0; }
+        .assistant-message > *:last-child { margin-bottom: 0; }
+        .light-theme .assistant-message { background-color: var(--chat-ai-light); }
 
-        .assistant-message > *:last-child {
-            margin-bottom: 0;
-        }
-        .light-theme .assistant-message {
-            background-color: var(--chat-ai-light);
-        }
-
-        /* Formatting styles for assistant messages */
-        .assistant-message h1,
-        .assistant-message h2,
-        .assistant-message h3,
-        .assistant-message h4,
-        .assistant-message h5,
-        .assistant-message h6 {
-            margin-top: 0em;
-            margin-bottom: 0em;
-            font-weight: 600;
-            line-height: 1.3;
+        /* Formatting styles */
+        .assistant-message h1, .assistant-message h2, .assistant-message h3,
+        .assistant-message h4, .assistant-message h5, .assistant-message h6 {
+            margin-top: 0.8em; margin-bottom: 0.4em; font-weight: 600; line-height: 1.3;
         }
         .assistant-message h1 { font-size: 1.8em; }
         .assistant-message h2 { font-size: 1.5em; }
         .assistant-message h3 { font-size: 1.3em; }
         .assistant-message h4 { font-size: 1.1em; }
         .assistant-message h5 { font-size: 1.0em; }
-        .assistant-message h6 { font-size: 0.9em; color: var(--placeholder-dark); } /* Subtle H6 */
+        .assistant-message h6 { font-size: 0.9em; color: var(--placeholder-dark); }
         .light-theme .assistant-message h6 { color: var(--placeholder-light); }
+        .assistant-message p { margin-bottom: 0.5em; }
+        .assistant-message p:last-child { margin-bottom: 0; }
 
-        .assistant-message p {
-             margin-bottom: 0em; /* Space between paragraphs */
-        }
-         .assistant-message p:last-child {
-             margin-bottom: 0; /* No extra space after the last paragraph */
-         }
-
-
-        .assistant-message pre {
-            background-color: var(--code-bg-dark);
-            color: var(--code-text-dark);
-            padding: 1em;
-            border-radius: 6px;
-            overflow-x: auto; /* Add horizontal scroll for long lines */
-            margin: 1em 0; /* Add space around code blocks */
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.9em;
-            line-height: 1.5;
-            white-space: pre; /* Preserve whitespace and line breaks */
-        }
-        .light-theme .assistant-message pre {
-            background-color: var(--code-bg-light);
-            color: var(--code-text-light);
-            border: 1px solid var(--border-light); /* Add subtle border in light mode */
-        }
-
-        .assistant-message code {
-             font-family: inherit; /* Inherit from <pre> */
-             background: none; /* Remove background if inside pre */
-             padding: 0;
-        }
-         /* Style for inline code if needed later `like this` */
-        /* .assistant-message code:not(pre > code) {
-             background-color: rgba(124, 77, 255, 0.15);
-             padding: 0.2em 0.4em;
-             border-radius: 3px;
-             font-size: 0.85em;
-         } */
-
+        /* Controls */
         .message-controls {
             position: absolute;
             top: 5px;
@@ -406,38 +386,21 @@
             gap: 5px;
             opacity: 0;
             transition: opacity 0.2s;
-            background-color: rgba(0,0,0,0.2); /* Slightly darker background for visibility */
+            background-color: rgba(0,0,0,0.2);
             padding: 3px 5px;
             border-radius: 4px;
-            z-index: 1; /* Ensure controls are above content */
+            z-index: 1;
         }
-         .light-theme .message-controls {
-            background-color: rgba(255,255,255,0.3);
-         }
-
-
-        .message:hover .message-controls {
-            opacity: 1;
-        }
+         .light-theme .message-controls { background-color: rgba(255,255,255,0.3); }
+        .message:hover .message-controls { opacity: 1; }
 
         .control-btn {
-            background: none;
-            border: none;
-            color: #eee; /* Make buttons lighter on dark bg */
-            opacity: 0.8;
-            cursor: pointer;
-            font-size: 13px; /* Slightly smaller */
-            padding: 3px;
+            background: none; border: none; color: #eee; opacity: 0.8;
+            cursor: pointer; font-size: 13px; padding: 3px;
             transition: opacity 0.2s, color 0.2s;
         }
-
-        .light-theme .control-btn {
-            color: #555; /* Darker buttons on light bg */
-        }
-
-        .control-btn:hover {
-            opacity: 1;
-        }
+        .light-theme .control-btn { color: #555; }
+        .control-btn:hover { opacity: 1; }
 
         .input-container {
             padding: 16px;
@@ -452,7 +415,7 @@
 
         .message-input {
             width: 100%;
-            padding: 12px 56px 12px 16px; /* Add padding-right for button */
+            padding: 12px 56px 12px 16px;
             border-radius: 8px;
             border: 1px solid var(--border-dark);
             background-color: var(--chat-user-dark);
@@ -460,12 +423,12 @@
             font-family: inherit;
             font-size: 14px;
             resize: none;
-            transition: border-color 0.2s, height 0.1s ease-out; /* Smoother height transition */
+            transition: border-color 0.2s, height 0.1s ease-out;
             box-sizing: border-box;
             outline: none;
-            max-height: 200px; /* Limit max height */
-            overflow-y: auto; /* Add scroll if max-height is reached */
-            line-height: 1.5; /* Match message line height */
+            max-height: 200px;
+            overflow-y: auto;
+            line-height: 1.5;
         }
 
         .light-theme .message-input {
@@ -473,23 +436,14 @@
             background-color: var(--chat-user-light);
             color: var(--text-light);
         }
-
-        .message-input:focus {
-            border-color: var(--primary-color);
-        }
-
-        .message-input::placeholder {
-            color: var(--placeholder-dark);
-        }
-
-        .light-theme .message-input::placeholder {
-            color: var(--placeholder-light);
-        }
+        .message-input:focus { border-color: var(--primary-color); }
+        .message-input::placeholder { color: var(--placeholder-dark); }
+        .light-theme .message-input::placeholder { color: var(--placeholder-light); }
 
         .send-btn {
             position: absolute;
             right: 28px;
-            bottom: 26px; /* Adjust based on padding */
+            bottom: 26px;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -502,20 +456,11 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
+        .send-btn:hover { background-color: var(--secondary-color); }
+        .send-btn:disabled { background-color: #555; cursor: not-allowed; }
+        .light-theme .send-btn:disabled { background-color: #ccc; }
 
-        .send-btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .send-btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-        }
-
-        .light-theme .send-btn:disabled {
-            background-color: #ccc;
-        }
-
+        /* Settings Panel */
         .settings-panel {
             position: fixed;
             top: 0;
@@ -532,16 +477,11 @@
             display: flex;
             flex-direction: column;
         }
-
         .light-theme .settings-panel {
             background-color: var(--sidebar-light);
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
         }
-
-        .settings-panel.open {
-            right: 0;
-        }
-
+        .settings-panel.open { right: 0; }
         .settings-header {
             display: flex;
             justify-content: space-between;
@@ -549,43 +489,21 @@
             margin-bottom: 24px;
             flex-shrink: 0;
         }
-
-        .settings-content {
-           flex-grow: 1;
-           overflow-y: auto; /* Allow content to scroll if needed */
-        }
-
+        .settings-content { flex-grow: 1; overflow-y: auto; }
         .close-settings {
-            background: none;
-            border: none;
-            color: var(--text-dark);
-            cursor: pointer;
-            font-size: 18px;
-            transition: color 0.3s;
+            background: none; border: none; color: var(--text-dark);
+            cursor: pointer; font-size: 18px; transition: color 0.3s;
         }
-
-        .light-theme .close-settings {
-            color: var(--text-light);
-        }
-
-        .setting-group {
-            margin-bottom: 24px;
-        }
-
+        .light-theme .close-settings { color: var(--text-light); }
+        .setting-group { margin-bottom: 24px; }
         .setting-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: var(--text-dark);
-            opacity: 0.9;
-            transition: color 0.3s;
+            font-size: 14px; font-weight: 600; margin-bottom: 10px;
+            color: var(--text-dark); opacity: 0.9; transition: color 0.3s;
         }
+        .light-theme .setting-title { color: var(--text-light); }
 
-        .light-theme .setting-title {
-            color: var(--text-light);
-        }
-
-        select, input[type="number"] {
+        /* Input elements inside settings */
+        .setting-group input[type="number"] {
             width: 100%;
             padding: 10px;
             border-radius: 6px;
@@ -597,344 +515,230 @@
             box-sizing: border-box;
             transition: border-color 0.2s, background-color 0.3s, color 0.3s;
         }
-
-        .light-theme select, .light-theme input[type="number"] {
+        .light-theme .setting-group input[type="number"] {
             background-color: var(--chat-user-light);
             color: var(--text-light);
             border: 1px solid var(--border-light);
         }
+        .setting-group input[type="number"]:focus { border-color: var(--primary-color); }
 
-        select:focus, input[type="number"]:focus {
-            border-color: var(--primary-color);
-        }
-
-        .switch-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            transition: opacity 0.3s; /* Add transition for disabling */
-        }
-
-        /* Style for disabled thinking mode */
-        .switch-container.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .switch-container.disabled .switch-label {
-            color: var(--disabled-text-dark);
-        }
-        .light-theme .switch-container.disabled .switch-label {
-            color: var(--disabled-text-light);
-        }
-
-        .switch-container.disabled .switch {
-             pointer-events: none; /* Prevent clicking slider when disabled */
-        }
-        /* End disabled style */
-
-        .switch-label {
+        /* Model Selector Button */
+        .select-model-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: var(--chat-user-dark);
             color: var(--text-dark);
-            transition: color 0.3s;
+            border: 1px solid var(--border-dark);
+            outline: none;
+            font-family: inherit;
+            box-sizing: border-box;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
         }
-        .light-theme .switch-label {
+        .light-theme .select-model-btn {
+            background-color: var(--chat-user-light);
             color: var(--text-light);
+            border: 1px solid var(--border-light);
         }
-
-        .switch {
-            position: relative;
+        .select-model-btn:hover { background-color: var(--hover-dark); }
+        .light-theme .select-model-btn:hover { background-color: var(--hover-light); }
+        .select-model-btn:focus { border-color: var(--primary-color); }
+        .select-model-btn .model-name {
             display: inline-block;
-            width: 50px;
-            height: 24px;
-            flex-shrink: 0; /* Prevent switch from shrinking */
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #555;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--primary-color);
-        }
-
-        input:focus + .slider {
-            box-shadow: 0 0 1px var(--primary-color);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        input:disabled + .slider {
-             background-color: #444; /* Darker gray when disabled */
-             cursor: not-allowed;
-        }
-        .light-theme input:disabled + .slider {
-             background-color: #ccc; /* Lighter gray when disabled */
-        }
-
-        .settings-footer {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-dark);
-            flex-shrink: 0;
-            transition: border-color 0.3s;
-        }
-        .light-theme .settings-footer {
-             border-top: 1px solid var(--border-light);
-        }
-
-        .save-settings {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-
-        .save-settings:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .loader {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
+            max-width: calc(100% - 20px); /* Adjust based on icon size if any */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             vertical-align: middle;
         }
-         .light-theme .loader {
-             border: 2px solid rgba(0, 0, 0, 0.2);
-             border-top-color: #333;
-         }
+        .select-model-btn .fas { float: right; opacity: 0.7; margin-top: 2px;}
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        /* Toggle Switch */
+        .switch-container {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; transition: opacity 0.3s;
         }
+        .switch-container.disabled { opacity: 0.5; cursor: not-allowed; }
+        .switch-container.disabled .switch-label { color: var(--disabled-text-dark); }
+        .light-theme .switch-container.disabled .switch-label { color: var(--disabled-text-light); }
+        .switch-container.disabled .switch { pointer-events: none; }
+        .switch-label { color: var(--text-dark); transition: color 0.3s; }
+        .light-theme .switch-label { color: var(--text-light); }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        input:disabled + .slider { background-color: #444; cursor: not-allowed; }
+        .light-theme input:disabled + .slider { background-color: #ccc; }
 
+        .settings-footer {
+            display: flex; justify-content: flex-end; margin-top: 24px;
+            padding-top: 16px; border-top: 1px solid var(--border-dark);
+            flex-shrink: 0; transition: border-color 0.3s;
+        }
+        .light-theme .settings-footer { border-top: 1px solid var(--border-light); }
+        .save-settings {
+            background-color: var(--primary-color); color: white; border: none;
+            border-radius: 4px; padding: 10px 20px; cursor: pointer;
+            font-weight: 600; transition: background-color 0.2s;
+        }
+        .save-settings:hover { background-color: var(--secondary-color); }
+
+        /* Loader */
+        .loader {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+            border-top-color: #fff; animation: spin 1s ease-in-out infinite;
+            margin-right: 8px; vertical-align: middle;
+        }
+         .light-theme .loader { border: 2px solid rgba(0, 0, 0, 0.2); border-top-color: #333; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal Styles */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6); /* Slightly darker overlay */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1050; /* Ensure modal is above settings panel */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); display: flex;
+            align-items: center; justify-content: center; z-index: 1050;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
         }
-
-        .modal-overlay.visible {
-            opacity: 1;
-            visibility: visible;
-        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
 
         .modal {
-            background-color: var(--background-dark);
-            border-radius: 8px;
-            padding: 24px;
-            width: 400px;
-            max-width: 90%;
+            background-color: var(--modal-bg-dark); border-radius: 8px;
+            padding: 24px; width: 600px; max-width: 90%;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             transition: background-color 0.3s;
+            max-height: 80vh; /* Limit modal height */
+            display: flex;
+            flex-direction: column;
         }
-
         .light-theme .modal {
-            background-color: var(--background-light);
+            background-color: var(--modal-bg-light);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 12px; transition: border-color 0.3s; flex-shrink: 0;
+        }
+        .light-theme .modal-header { border-bottom: 1px solid var(--border-light); }
+        .modal-title { font-size: 18px; font-weight: 600; margin: 0; }
+        .close-modal {
+            background: none; border: none; color: var(--text-dark); cursor: pointer;
+            font-size: 20px; opacity: 0.7; transition: opacity 0.2s, color 0.3s;
+        }
+        .light-theme .close-modal { color: var(--text-light); }
+        .close-modal:hover { opacity: 1; }
+
+        .modal-content {
+            overflow-y: auto; /* Allow content to scroll */
+            flex-grow: 1;
+        }
+        .modal-content p { margin: 16px 0; line-height: 1.6; } /* For delete modal */
+
+        /* Model Selection Modal Specific Styles */
+        #modelModalContent {
+            padding-right: 5px; /* Space for scrollbar if needed */
+            /* Ensure the modal content area itself handles the primary scrolling */
+            overflow-y: auto;
+            flex-grow: 1; /* Make sure it takes available space */
+            padding-bottom: 10px; /* Add some space at the bottom */
+        }
+        .model-category { margin-bottom: 15px; }
+        .category-header {
+            background-color: var(--chat-user-dark);
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            border-bottom: 1px solid var(--border-dark);
-            padding-bottom: 12px;
-            transition: border-color 0.3s;
+            transition: background-color 0.2s;
+            /* Add position relative for potential absolute positioned elements inside if needed later */
+            position: relative;
         }
-        .light-theme .modal-header {
-            border-bottom: 1px solid var(--border-light);
-        }
+        .light-theme .category-header { background-color: var(--chat-user-light); }
+        .category-header:hover { background-color: var(--hover-dark); }
+        .light-theme .category-header:hover { background-color: var(--hover-light); }
+        .category-header .fas { transition: transform 0.3s ease; }
+        .category-header.open .fas { transform: rotate(90deg); }
 
-        .modal-title {
-            font-size: 18px;
+        .category-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding-left: 10px; /* Indent models */
+        }
+        .category-content.open { max-height: 650px; /* Adjust as needed */ }
+
+        .model-item {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .model-item:hover { background-color: var(--hover-dark); }
+        .light-theme .model-item:hover { background-color: var(--hover-light); }
+        .model-item.active {
+            background-color: var(--active-dark);
             font-weight: 600;
-            margin: 0;
         }
+        .light-theme .model-item.active { background-color: var(--active-light); }
 
-        .close-modal {
-            background: none;
-            border: none;
-            color: var(--text-dark);
-            cursor: pointer;
-            font-size: 20px; /* Larger close icon */
-            opacity: 0.7;
-            transition: opacity 0.2s, color 0.3s;
-        }
-        .light-theme .close-modal {
-            color: var(--text-light);
-        }
-        .close-modal:hover {
-             opacity: 1;
-        }
 
-        .modal-content p {
-            margin: 16px 0;
-            line-height: 1.6;
-        }
-
+        /* Delete Modal Actions */
         .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 24px;
+            display: flex; justify-content: flex-end; gap: 12px;
+            margin-top: 24px; flex-shrink: 0;
         }
-
         .cancel-btn {
-            background: none;
-            border: 1px solid var(--border-dark);
-            color: var(--text-dark);
-            border-radius: 4px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s, color 0.3s, border-color 0.3s;
+            background: none; border: 1px solid var(--border-dark); color: var(--text-dark);
+            border-radius: 4px; padding: 8px 16px; cursor: pointer;
+            font-weight: 500; transition: background-color 0.2s, color 0.3s, border-color 0.3s;
         }
-
-        .light-theme .cancel-btn {
-            border: 1px solid var(--border-light);
-            color: var(--text-light);
-        }
-
-        .cancel-btn:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .light-theme .cancel-btn:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
+        .light-theme .cancel-btn { border: 1px solid var(--border-light); color: var(--text-light); }
+        .cancel-btn:hover { background-color: var(--hover-dark); }
+        .light-theme .cancel-btn:hover { background-color: var(--hover-light); }
         .confirm-btn {
-            background-color: #ff4d4d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: 500;
+            background-color: #ff4d4d; color: white; border: none; border-radius: 4px;
+            padding: 8px 16px; cursor: pointer; font-weight: 500;
             transition: background-color 0.2s;
         }
+        .confirm-btn:hover { background-color: #e04040; }
 
-        .confirm-btn:hover {
-            background-color: #e04040;
-        }
-
+        /* Mobile */
         .mobile-toggle {
-            display: none; /* Hidden by default */
-            background: none;
-            border: none;
-            color: var(--text-dark);
-            font-size: 20px;
-            padding: 8px;
-            cursor: pointer;
-            transition: color 0.3s;
+            display: none; background: none; border: none; color: var(--text-dark);
+            font-size: 20px; padding: 8px; cursor: pointer; transition: color 0.3s;
         }
-        .light-theme .mobile-toggle {
-            color: var(--text-light);
-        }
+        .light-theme .mobile-toggle { color: var(--text-light); }
 
         @media (max-width: 768px) {
-            .sidebar {
-                position: absolute; /* Change to absolute for overlay effect */
-                height: 100%;
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                width: 100%;
-            }
-
-            .mobile-toggle {
-                display: block; /* Show burger on mobile */
-            }
-
-            /* Add overlay to main content when sidebar is open */
+            .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { width: 100%; }
+            .mobile-toggle { display: block; }
             .main-content::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 5; /* Below sidebar */
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s, visibility 0.3s;
+                content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0, 0, 0, 0.5); z-index: 5;
+                opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
             }
-            .sidebar.open + .main-content::after {
-                 opacity: 1;
-                 visibility: visible;
-            }
-            /* Add class to body or main content instead of relying on sibling selector */
-             body.sidebar-open .main-content::after {
-                  opacity: 1;
-                  visibility: visible;
-             }
-
-
-            .settings-panel {
-                width: 90%; /* Make settings panel wider on mobile */
-                right: -100%; /* Adjust hiding position */
-            }
-             .settings-panel.open {
-                 right: 0;
-             }
+            body.sidebar-open .main-content::after { opacity: 1; visibility: visible; }
+            .settings-panel { width: 90%; right: -100%; }
+            .settings-panel.open { right: 0; }
+            .modal { width: 90%; } /* Wider modal on mobile */
         }
 
     </style>
@@ -942,13 +746,13 @@
 <body class="dark-theme">
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Puter Chat</h2>
+            <h2>Puter AI</h2>
             <button class="new-chat-btn" id="newChatBtn">
                 <i class="fas fa-plus"></i> Новый чат
             </button>
         </div>
         <div class="chat-list" id="chatList">
-            <!-- Placeholder чаты будут добавлены здесь через JavaScript -->
+            <!-- Placeholder -->
             <div class="chat-item">
                 <div class="chat-icon"><i class="fas fa-spinner fa-spin"></i></div>
                 <div class="chat-title">Загрузка чатов...</div>
@@ -958,7 +762,7 @@
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i>
             </button>
-            <span>2025.4.1</span> <!-- Version bump -->
+            <span>2025.4.2</span>
         </div>
     </div>
 
@@ -1003,19 +807,27 @@
         <div class="settings-content">
             <div class="setting-group">
                 <div class="setting-title">Модель</div>
-                <select id="modelSelect">
-                    <option value="loading" disabled>Загрузка моделей...</option>
-                </select>
+                 <!-- Button to open the model selection modal -->
+                 <button class="select-model-btn" id="selectModelBtn">
+                     <span class="model-name">Загрузка моделей...</span>
+                     <i class="fas fa-chevron-down"></i>
+                 </button>
+                 <!-- Hidden select, might remove later if not needed -->
+                 <select id="modelSelectHidden" style="display: none;"></select>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-title">Температура</div>
+                <input type="number" id="temperature" min="0" max="2" value="1" step="0.05">
             </div>
 
             <div class="setting-group">
                 <div class="setting-title">Максимальное количество токенов</div>
-                <input type="number" id="maxTokens" min="100" max="8192" value="2048" step="100">
+                <input type="number" id="maxTokens" min="100" max="8192" value="2048" step="128">
             </div>
 
             <div class="setting-group">
                 <div class="setting-title">Режим мышления</div>
-                <!-- Add id to container for easier selection -->
                 <div class="switch-container" id="thinkingModeContainer">
                     <span class="switch-label">Использовать режим мышления</span>
                     <label class="switch">
@@ -1027,13 +839,13 @@
                     Некоторые модели поддерживают специальный режим, где модель размышляет каждый шаг до того, как начинать отвечать.
                 </small>
             </div>
-            <!-- Add more settings groups here if needed -->
         </div>
         <div class="settings-footer">
             <button class="save-settings" id="saveSettings">Сохранить</button>
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
             <div class="modal-header">
@@ -1052,9 +864,22 @@
         </div>
     </div>
 
-    <!-- Optional: Add prism.js for syntax highlighting -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script> -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script> -->
+    <!-- Model Selection Modal -->
+    <div class="modal-overlay" id="modelSelectionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Выберите модель</h3>
+                <button class="close-modal" id="closeModelModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content" id="modelModalContent">
+                <!-- Categories and models will be populated here by JS -->
+                <p style="text-align: center; padding: 20px 0;">Загрузка моделей...</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
@@ -1070,122 +895,117 @@
             const settingsBtn = document.getElementById('settingsBtn');
             const settingsPanel = document.getElementById('settingsPanel');
             const closeSettings = document.getElementById('closeSettings');
-            const modelSelect = document.getElementById('modelSelect');
+            // Model selection elements
+            const selectModelBtn = document.getElementById('selectModelBtn'); // Button to open modal
+            const modelSelectionModal = document.getElementById('modelSelectionModal');
+            const modelModalContent = document.getElementById('modelModalContent');
+            const closeModelModal = document.getElementById('closeModelModal');
+            // Other settings elements
             const maxTokens = document.getElementById('maxTokens');
+            const temperature = document.getElementById('temperature');
             const thinkingModeToggle = document.getElementById('thinkingModeToggle');
-            const thinkingModeContainer = document.getElementById('thinkingModeContainer'); // Get container
+            const thinkingModeContainer = document.getElementById('thinkingModeContainer');
             const saveSettingsBtn = document.getElementById('saveSettings');
             const newChatBtn = document.getElementById('newChatBtn');
             const chatList = document.getElementById('chatList');
+            // Delete modal elements
             const deleteModal = document.getElementById('deleteModal');
             const closeDeleteModal = document.getElementById('closeDeleteModal');
             const cancelDelete = document.getElementById('cancelDelete');
             const confirmDelete = document.getElementById('confirmDelete');
+            // Mobile nav elements
             const mobileToggle = document.getElementById('mobileToggle');
             const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.getElementById('mainContent'); // For overlay click
-            const welcomeContainer = document.getElementById('welcomeContainer');
+            const mainContent = document.getElementById('mainContent');
+            const welcomeContainer = document.getElementById('welcomeContainer'); // Initial reference
 
             // --- Application State ---
             let currentChatId = null;
             let messageToDelete = null;
             let chatHistory = [];
             let chatSettings = {
-                modelKey: "",
-                model: "",
-                provider: "",
+                modelKey: "",   // e.g., "GPT 4o"
+                model: "",      // e.g., "gpt-4o"
+                provider: "",   // e.g., "openai-completion"
+                thinkingModel: null, // e.g., "openrouter:anthropic/claude-3.7-sonnet:thinking" or null
                 thinkingMode: false,
-                maxTokens: 2048
+                maxTokens: 2048,
+                temperature: 1
             };
-            let modelsData = null;
+            let modelsData = null; // Will hold the structured model data { Provider: { ModelKey: { model, provider?, thinking_model? }, provider: "category-provider" } }
             let chats = []; // Holds { id, title, history: [], settings: {} }
 
             // --- Utility Functions ---
-
-            // Basic HTML escaping
             function escapeHtml(unsafe) {
-                if (!unsafe) return ""; // Handle null or undefined input
+                if (typeof unsafe !== 'string') return "";
                 return unsafe
-                    .replace(/&/g, "&")
+                    .replace(/&/g, "&") // Must be first
                     .replace(/</g, "<")
                     .replace(/>/g, ">")
                     .replace(/"/g, '"')
                     .replace(/'/g, "'");
             }
 
-            // Format assistant message content (Markdown-like -> HTML)
             function formatAssistantMessage(content) {
+                // (Keep the existing robust formatting function)
                 let processedContent = content;
-                const codeBlocks = []; // Store final HTML for extracted code blocks
+                const codeBlocks = [];
 
-                // 1. Extract Code Blocks, escape their content, and replace with placeholders
                 processedContent = processedContent.replace(/^```(\w*)\n([\s\S]*?)\n```$/gm, (match, lang, code) => {
                     const languageClass = lang ? `language-${escapeHtml(lang.trim())}` : 'language-plaintext';
-                    // --- Key Step: Escape the raw code content ---
-                    // This prevents any HTML tags or Markdown look-alikes within the code
-                    // from being interpreted by the browser or later processing steps.
                     const escapedCode = escapeHtml(code);
-                    // --- End Key Step ---
-                    const blockHtml = `<pre><code class="${languageClass}">${escapedCode}</code></pre>`;
+                    const blockHtml = `<pre class="${languageClass}"><code class="${languageClass}">${escapedCode}</code></pre>`;
                     const placeholder = `%%CODEBLOCK_${codeBlocks.length}%%`;
-                    codeBlocks.push(blockHtml); // Store the generated HTML
-                    return placeholder; // Replace original block in the string
+                    codeBlocks.push(blockHtml);
+                    return placeholder;
                 });
 
-                // 2. Process the remaining content (with placeholders) for Headings and Paragraphs
                 const lines = processedContent.split('\n');
                 let formattedHtml = '';
                 let currentParagraph = '';
 
                 lines.forEach(line => {
-                    // Check for placeholders first
                     const placeholderMatch = line.match(/^%%CODEBLOCK_(\d+)%%$/);
                     if (placeholderMatch) {
-                        // Close any open paragraph before inserting code block
                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                         }
                         const index = parseInt(placeholderMatch[1], 10);
                         if (index >= 0 && index < codeBlocks.length) {
-                            formattedHtml += codeBlocks[index] + '\n'; // Insert the pre-formatted code block HTML
+                            formattedHtml += codeBlocks[index] + '\n';
                         } else {
-                             formattedHtml += line + '\n'; // Fallback: insert placeholder itself if index is invalid
+                             formattedHtml += escapeHtml(line) + '\n'; // Escape if placeholder invalid
                         }
-                        return; // Handled this line (it was a code block placeholder)
+                        return;
                     }
 
-                    // Check for headings
                     const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
                     if (headingMatch) {
-                        // Close any open paragraph
                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                         }
                         const level = headingMatch[1].length;
-                        const text = escapeHtml(headingMatch[2].trim()); // Escape heading text
+                        const text = escapeHtml(headingMatch[2].trim());
                         formattedHtml += `<h${level}>${text}</h${level}>\n`;
                     } else if (line.trim() === '' && currentParagraph) {
-                        // Empty line signifies paragraph break
                          formattedHtml += `<p>${currentParagraph}</p>\n`;
                          currentParagraph = '';
                     } else if (line.trim() !== '') {
-                         // Part of a regular paragraph (escape its content)
-                         currentParagraph += (currentParagraph ? '<br>' : '') + escapeHtml(line); // Don't trim here, preserve leading spaces if any within line
+                        // Escape line content before adding
+                        const escapedLine = escapeHtml(line);
+                        // Add <br> between lines within the same paragraph
+                        currentParagraph += (currentParagraph ? '<br>' : '') + escapedLine;
                     }
-                    // Implicitly ignore empty lines if not breaking a paragraph
                 });
 
-                // Add any remaining paragraph content
                 if (currentParagraph) {
                     formattedHtml += `<p>${currentParagraph}</p>\n`;
                 }
 
-                // Return the fully assembled HTML, trimming any final whitespace
                 return formattedHtml.trim();
             }
-
 
             // --- Initialization ---
             loadTheme();
@@ -1202,33 +1022,103 @@
             closeSettings.addEventListener('click', closeSettingsPanel);
             saveSettingsBtn.addEventListener('click', saveSettingsHandler);
             newChatBtn.addEventListener('click', createNewChat);
-            modelSelect.addEventListener('change', updateThinkingModeAvailability);
 
-            // Modal listeners
-            closeDeleteModal.addEventListener('click', () => toggleModal(deleteModal, false));
-            cancelDelete.addEventListener('click', () => toggleModal(deleteModal, false));
+            // Model Selection Modal listeners
+            selectModelBtn.addEventListener('click', openModelSelectionModal);
+            closeModelModal.addEventListener('click', () => toggleModal(modelSelectionModal, false));
+            modelSelectionModal.addEventListener('click', (event) => { // Close on overlay click
+                if (event.target === modelSelectionModal) {
+                    toggleModal(modelSelectionModal, false);
+                }
+            });
+
+            // Delete Modal listeners
+            deleteModal.addEventListener('click', (event) => { // Close on overlay click
+                if (event.target === deleteModal) {
+                    toggleModal(deleteModal, false);
+                    messageToDelete = null; // Clear message ID if closed via overlay
+                }
+            });
+            closeDeleteModal.addEventListener('click', () => {
+                toggleModal(deleteModal, false);
+                messageToDelete = null;
+            });
+            cancelDelete.addEventListener('click', () => {
+                toggleModal(deleteModal, false);
+                messageToDelete = null;
+            });
             confirmDelete.addEventListener('click', deleteMessageHandler);
 
             // Mobile navigation
             mobileToggle.addEventListener('click', toggleSidebar);
             mainContent.addEventListener('click', (event) => {
-                if (window.innerWidth <= 768 && sidebar.classList.contains('open') && event.target === mainContent) {
-                    toggleSidebar();
-                }
-            });
-
-            // Close settings panel on click outside
-            document.addEventListener('click', (event) => {
-                if (settingsPanel.classList.contains('open') &&
-                    !settingsPanel.contains(event.target) &&
-                    !settingsBtn.contains(event.target)) {
-                    closeSettingsPanel();
-                }
+                // Close sidebar if clicking on the dimmed overlay area
+                 if (body.classList.contains('sidebar-open') && event.target === mainContent) {
+                     toggleSidebar();
+                 }
+                 // Close settings panel if clicking outside
+                 if (settingsPanel.classList.contains('open') &&
+                     !settingsPanel.contains(event.target) &&
+                     !settingsBtn.contains(event.target) &&
+                     event.target !== selectModelBtn && // Don't close if clicking model button
+                     !selectModelBtn.contains(event.target)) { // Check contains for icon inside button
+                     closeSettingsPanel();
+                 }
             });
 
 
             // --- Core Functions ---
+            function copyMessageContent(messageId) {
+    const message = chatHistory.find(msg => msg.id === messageId);
+    if (message && message.content) {
+        navigator.clipboard.writeText(message.content)
+            .then(() => {
+                console.log("Original message copied:", messageId);
+                // Визуальная обратная связь (иконка галочки)
+                const copyBtn = document.querySelector(`.message[data-id="${messageId}"] .copy-btn i`);
+                if(copyBtn) {
+                    copyBtn.classList.remove('fa-copy');
+                    copyBtn.classList.add('fa-check');
+                    setTimeout(() => {
+                        copyBtn.classList.remove('fa-check');
+                        copyBtn.classList.add('fa-copy');
+                    }, 1500);
+                }
+                
+                // Показать всплывающее уведомление
+                showToast("Сообщение скопировано");
+            })
+            .catch(err => {
+                console.error("Failed to copy message:", err);
+                showToast("Не удалось скопировать текст", true);
+            });
+    } else {
+        console.warn("Could not find message in history to copy:", messageId);
+        showToast("Сообщение не найдено", true);
+    }
+}
 
+// Добавьте эту новую функцию
+            function showToast(message, isError = false) {
+                const toast = document.getElementById('toastNotification');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                // Установить сообщение и стиль ошибки при необходимости
+                toastMessage.textContent = message;
+                if (isError) {
+                    toast.style.backgroundColor = '#ff4d4d';
+                } else {
+                    toast.style.backgroundColor = '';
+                }
+                
+                // Показать уведомление
+                toast.classList.add('visible');
+                
+                // Скрыть через задержку
+                setTimeout(() => {
+                    toast.classList.remove('visible');
+                }, 2000);
+            }
             function loadTheme() {
                 const savedTheme = localStorage.getItem('theme');
                 if (savedTheme === 'light') {
@@ -1238,6 +1128,13 @@
                     body.classList.remove('light-theme');
                     themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
                 }
+                 // Apply theme to Prism CSS link if necessary (some themes might need switching)
+                 const prismLink = document.querySelector('link[href*="prism"]');
+                 if (prismLink) {
+                     const themeName = body.classList.contains('light-theme') ? 'prism' : 'prism-okaidia'; // Example themes
+                     // prismLink.href = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/${themeName}.min.css`;
+                     // Simpler: Use CSS variables as done now.
+                 }
             }
 
             function toggleTheme() {
@@ -1245,75 +1142,198 @@
                 const isLight = body.classList.contains('light-theme');
                 themeToggle.innerHTML = isLight ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
                 localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                // Re-apply theme to Prism link if needed
+                loadTheme();
             }
 
-             function fetchModelsAndSetup() {
-                fetch("/models")
+            function fetchModelsAndSetup() {
+                fetch("/models") // Assuming this endpoint returns the JSON array structure provided
                     .then(response => {
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         return response.json();
                     })
                     .then(data => {
+                         // Expecting data to be an array with one object inside
                          if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') {
                              console.error("Invalid models data format received:", data);
                              throw new Error("Invalid models data format.");
                          }
-                         modelsData = data[0];
+                         modelsData = data[0]; // Store the main object
                          console.log("Models loaded:", modelsData);
-                         populateModelSelect();
-                         const defaultModelKey = Object.keys(modelsData)[0];
-                         if (defaultModelKey) {
-                             modelSelect.value = defaultModelKey;
-                             updateChatSettingsFromSelection();
-                             updateThinkingModeAvailability();
-                             updateSettingsUI();
+
+                         // Populate the new modal
+                         populateModelSelectionModal();
+
+                         // Set default model based on the first available one
+                         const firstProviderKey = Object.keys(modelsData)[0];
+                         if (firstProviderKey) {
+                             const providerModels = modelsData[firstProviderKey];
+                             const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider'); // Find first model key
+                             if (firstModelKey) {
+                                 const modelInfo = providerModels[firstModelKey];
+                                 const categoryProvider = providerModels.provider;
+                                 const actualProvider = modelInfo.provider || categoryProvider; // Inheritance
+
+                                 // Set initial chatSettings
+                                 chatSettings.modelKey = firstModelKey;
+                                 chatSettings.model = modelInfo.model;
+                                 chatSettings.provider = actualProvider;
+                                 chatSettings.thinkingModel = modelInfo.thinking_model || null; // Store thinking model separate
+                                 chatSettings.thinkingMode = false; // Default off
+
+                                 updateSettingsUI(); // Update settings panel display
+                             } else {
+                                 console.warn("No models found within the first provider:", firstProviderKey);
+                                 selectModelBtn.querySelector('.model-name').textContent = "Нет моделей";
+                                 selectModelBtn.disabled = true;
+                             }
                          } else {
-                              console.warn("No models available to set as default.");
-                              modelSelect.innerHTML = "<option value='error' disabled>Нет доступных моделей</option>";
+                             console.warn("No providers found in models data.");
+                             selectModelBtn.querySelector('.model-name').textContent = "Нет провайдеров";
+                             selectModelBtn.disabled = true;
                          }
-                         loadChats();
+
+                         loadChats(); // Load chats after models are ready
                     })
                     .catch(error => {
                         console.error("Ошибка при загрузке моделей:", error);
-                        modelSelect.innerHTML = "<option value='error' disabled>Ошибка загрузки моделей</option>";
+                        selectModelBtn.querySelector('.model-name').textContent = "Ошибка загрузки";
+                        selectModelBtn.disabled = true;
+                        modelModalContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px 0;">${escapeHtml(error.message)}</p>`;
                         chatList.innerHTML = '<div class="chat-item" style="color: #ff4d4d;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки</div>';
                     });
             }
 
-            function populateModelSelect() {
-                 if (!modelsData) return;
-                 modelSelect.innerHTML = "";
-                 Object.keys(modelsData).forEach(modelKey => {
-                     const option = document.createElement('option');
-                     option.value = modelKey;
-                     option.textContent = modelKey;
-                     modelSelect.appendChild(option);
+            function populateModelSelectionModal() {
+                 if (!modelsData) {
+                     modelModalContent.innerHTML = '<p style="text-align: center; color: red;">Данные моделей не загружены.</p>';
+                     return;
+                 }
+                 modelModalContent.innerHTML = ''; // Clear loading message
+
+                 Object.keys(modelsData).forEach(providerKey => {
+                     const providerInfo = modelsData[providerKey];
+                     const categoryProvider = providerInfo.provider; // Provider for the whole category
+
+                     // Create category container
+                     const categoryDiv = document.createElement('div');
+                     categoryDiv.className = 'model-category';
+
+                     // Create category header
+                     const headerDiv = document.createElement('div');
+                     headerDiv.className = 'category-header';
+                     headerDiv.textContent = providerKey; // e.g., "OpenAI"
+                     headerDiv.innerHTML = `${escapeHtml(providerKey)} <i class="fas fa-chevron-right"></i>`; // Add chevron
+                     headerDiv.setAttribute('aria-expanded', 'false');
+
+                     // Create content div (for models)
+                     const contentDiv = document.createElement('div');
+                     contentDiv.className = 'category-content';
+
+                     // Add models to content div
+                     Object.keys(providerInfo).forEach(modelKey => {
+                         if (modelKey === 'provider') return; // Skip the category provider key
+
+                         const modelDetails = providerInfo[modelKey];
+                         const actualProvider = modelDetails.provider || categoryProvider; // Inheritance logic
+                         const thinkingModel = modelDetails.thinking_model || null;
+
+                         const modelItem = document.createElement('div');
+                         modelItem.className = 'model-item';
+                         modelItem.textContent = modelKey; // e.g., "GPT 4o"
+                         modelItem.dataset.modelKey = modelKey;
+                         modelItem.dataset.model = modelDetails.model;
+                         modelItem.dataset.provider = actualProvider;
+                         if (thinkingModel) {
+                             modelItem.dataset.thinkingModel = thinkingModel;
+                         }
+
+                         // Add click listener for selection
+                         modelItem.addEventListener('click', () => {
+                             // Update chat settings
+                             chatSettings.modelKey = modelKey;
+                             chatSettings.model = modelDetails.model;
+                             chatSettings.provider = actualProvider;
+                             chatSettings.thinkingModel = thinkingModel; // Update potential thinking model
+
+                             // Update UI
+                             updateSettingsUI(); // Updates button text & thinking mode state
+                             toggleModal(modelSelectionModal, false); // Close modal
+
+                             // Highlight the selected item in the modal (for next time it opens)
+                             document.querySelectorAll('#modelModalContent .model-item.active').forEach(el => el.classList.remove('active'));
+                             modelItem.classList.add('active');
+
+                             // Reset thinking mode if the new model doesn't support it
+                             updateThinkingModeAvailability();
+                             if (thinkingModeToggle.disabled) {
+                                 chatSettings.thinkingMode = false;
+                                 thinkingModeToggle.checked = false;
+                             }
+                         });
+
+                         contentDiv.appendChild(modelItem);
+                     });
+
+                     // Add toggle functionality to header
+                     headerDiv.addEventListener('click', () => {
+                         const isOpen = contentDiv.classList.toggle('open');
+                         headerDiv.classList.toggle('open', isOpen);
+                         headerDiv.setAttribute('aria-expanded', isOpen);
+                     });
+
+                     // Append header and content to the category div
+                     categoryDiv.appendChild(headerDiv);
+                     categoryDiv.appendChild(contentDiv);
+                     // Append category div to the main modal content
+                     modelModalContent.appendChild(categoryDiv);
                  });
+
+                 // After populating, update the active state based on current settings
+                 updateModelSelectionActiveState();
             }
 
-            function updateChatSettingsFromSelection() {
-                 if (!modelsData) return;
-                 const selectedModelKey = modelSelect.value;
-                 const modelInfo = modelsData[selectedModelKey];
-                 if (modelInfo) {
-                     chatSettings.modelKey = selectedModelKey;
-                     chatSettings.model = modelInfo.model;
-                     chatSettings.provider = modelInfo.provider;
-                 } else {
-                     console.error("Selected model key not found:", selectedModelKey);
+             function updateModelSelectionActiveState() {
+                 // Remove existing active class
+                 document.querySelectorAll('#modelModalContent .model-item.active').forEach(el => el.classList.remove('active'));
+                 // Find and add active class to the current model
+                 const currentModelItem = modelModalContent.querySelector(`.model-item[data-model-key="${chatSettings.modelKey}"]`);
+                 if (currentModelItem) {
+                     currentModelItem.classList.add('active');
+                     // Optionally expand the category of the active item
+                     const categoryContent = currentModelItem.closest('.category-content');
+                     const categoryHeader = categoryContent?.previousElementSibling;
+                     if (categoryContent && categoryHeader && !categoryContent.classList.contains('open')) {
+                         categoryContent.classList.add('open');
+                         categoryHeader.classList.add('open');
+                         categoryHeader.setAttribute('aria-expanded', 'true');
+                     }
                  }
+             }
+
+            function openModelSelectionModal() {
+                updateModelSelectionActiveState(); // Ensure correct item is highlighted
+                toggleModal(modelSelectionModal, true);
             }
 
             function updateSettingsUI() {
-                if (chatSettings.modelKey && modelsData && modelsData[chatSettings.modelKey]) {
-                     modelSelect.value = chatSettings.modelKey;
-                } else if (Object.keys(modelsData || {}).length > 0) {
-                    modelSelect.value = Object.keys(modelsData)[0];
-                    updateChatSettingsFromSelection();
-                }
+                // Update the model selection button text
+                const modelNameSpan = selectModelBtn.querySelector('.model-name');
+                 if (chatSettings.modelKey) {
+                    modelNameSpan.textContent = chatSettings.modelKey;
+                    selectModelBtn.disabled = false;
+                 } else if (!modelsData) {
+                     modelNameSpan.textContent = "Ошибка загрузки";
+                     selectModelBtn.disabled = true;
+                 } else {
+                     modelNameSpan.textContent = "Выберите модель";
+                     selectModelBtn.disabled = false;
+                 }
+
                 maxTokens.value = chatSettings.maxTokens;
+                temperature.value = chatSettings.temperature;
                 thinkingModeToggle.checked = chatSettings.thinkingMode;
-                updateThinkingModeAvailability();
+                updateThinkingModeAvailability(); // Update enabled/disabled state of toggle
             }
 
             function handleInput() {
@@ -1338,52 +1358,44 @@
 
             function toggleSidebar() {
                 sidebar.classList.toggle('open');
-                 // Add/remove class on body for overlay control
                 body.classList.toggle('sidebar-open', sidebar.classList.contains('open'));
             }
 
             function sendMessage() {
                 const messageContent = messageInput.value.trim();
-                if (!messageContent || !modelsData) return;
+                if (!messageContent || !modelsData || !chatSettings.model) {
+                    console.error("Cannot send message: Content missing, models not loaded, or no model selected.");
+                    addMessageToDOM('assistant', "Ошибка: Невозможно отправить сообщение. Проверьте настройки модели.", Date.now() + "-error", true);
+                    return;
+                }
 
                 const userMessage = { role: 'user', content: messageContent, id: Date.now() + "-user" };
                 addMessageToDOM('user', messageContent, userMessage.id);
-                chatHistory.push(userMessage);
+                chatHistory.push(userMessage); // Add user message to history
 
                 messageInput.value = '';
                 autoResizeTextarea();
                 sendBtn.disabled = true;
 
+                // If this is the first message, create the chat entry AFTER user message is in history
                 if (currentChatId === null) {
-                    createNewChatEntry(messageContent);
+                    createNewChatEntry(messageContent); // Creates chat, sets currentChatId, saves (uses current chatHistory)
                 } else {
-                     const currentChat = chats.find(c => c.id === currentChatId);
-                     if (currentChat) {
-                         currentChat.history = [...chatHistory];
-                         saveChats();
-                     }
+                     // Otherwise, just update the existing chat's history with the user message *before* sending
+                     // NO - we save the *full* history including the assistant response *after* the fetch succeeds using saveCurrentChatState
+                     // REMOVED THE INCORRECT PRE-SAVE LOGIC HERE
                 }
 
                 const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
 
+                // Determine model/provider
                 let effectiveModelId = chatSettings.model;
                 let effectiveProvider = chatSettings.provider;
-                const currentModelInfo = modelsData[chatSettings.modelKey];
-
-                if (currentModelInfo) {
-                    if (chatSettings.thinkingMode && currentModelInfo.thinking_model) {
-                        effectiveModelId = currentModelInfo.thinking_model;
-                        effectiveProvider = currentModelInfo.provider;
-                        console.log(`Using thinking model: ${effectiveModelId}`);
-                    } else {
-                        effectiveModelId = currentModelInfo.model;
-                        effectiveProvider = currentModelInfo.provider;
-                        console.log(`Using base model: ${effectiveModelId}`);
-                    }
+                if (chatSettings.thinkingMode && chatSettings.thinkingModel) {
+                    effectiveModelId = chatSettings.thinkingModel;
+                    console.log(`Using thinking model: ${effectiveModelId} via provider: ${effectiveProvider}`);
                 } else {
-                     console.error("Cannot send message: Current model info not found for key", chatSettings.modelKey);
-                     addMessageToDOM('assistant', "Ошибка: Не удалось определить настройки текущей модели.", Date.now() + "-error", true);
-                     return;
+                    console.log(`Using base model: ${effectiveModelId} via provider: ${effectiveProvider}`);
                 }
 
                 const loadingMsgId = Date.now() + "-loading";
@@ -1396,42 +1408,59 @@
                         messages: messagesPayload,
                         provider: effectiveProvider,
                         model: effectiveModelId,
-                        max_tokens: chatSettings.maxTokens
+                        max_tokens: chatSettings.maxTokens,
+                        temperature: chatSettings.temperature
                     })
                 })
-                .then(response => {
-                     removeMessageFromDOM(loadingMsgId);
-                     if (!response.ok) {
-                         return response.json().then(errData => {
-                             const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
-                             throw new Error(errorMessage);
-                         }).catch(() => { throw new Error(`HTTP error ${response.status}`); });
-                     }
-                     return response.json();
+                .then(response => { // First .then: Check response status and prepare for JSON parsing
+                    if (!response.ok) {
+                        // Try to parse error details from JSON body first
+                        return response.json()
+                            .then(errData => { // If JSON body exists with error info
+                                const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
+                                throw new Error(errorMessage); // Throw a descriptive error
+                            })
+                            .catch(() => { // If parsing error body fails (e.g., HTML error page)
+                                throw new Error(`HTTP error ${response.status}`); // Throw basic HTTP status error
+                            });
+                    }
+                    // If response IS ok, return the promise for parsing the JSON body
+                    return response.json();
                 })
-                .then(data => {
+                .then(data => { // Second .then: Process the successfully parsed JSON data
+                    removeMessageFromDOM(loadingMsgId); // Remove loader now
+                    console.log("Received data:", data); // Log the data for debugging
+
+                    if (!data) { // Explicitly check if data is falsy (e.g., server returned null)
+                        console.error("API returned OK but data is falsy:", data);
+                        throw new Error("Сервер вернул пустой или неопределенный ответ.");
+                    }
+
                     if (data.response) {
                         const assistantMessage = { role: 'assistant', content: data.response, id: Date.now() + "-assistant" };
-                        addMessageToDOM('assistant', data.response, assistantMessage.id);
-                        chatHistory.push(assistantMessage);
-                         const currentChat = chats.find(c => c.id === currentChatId);
-                         if (currentChat) {
-                             currentChat.history = [...chatHistory];
-                             saveChats();
-                         }
+                        addMessageToDOM('assistant', data.response, assistantMessage.id); // Add to DOM
+                        chatHistory.push(assistantMessage); // Add to history *after* DOM
+                        updateLastMessageControls(); // Update controls for the new message
+                        saveCurrentChatState(); // Save the complete state *after* everything is updated
                     } else if (data.error || data.detail) {
                          const errorMsg = data.error || data.detail;
                          console.error("API Error:", errorMsg);
-                         addMessageToDOM('assistant', `Произошла ошибка API: ${errorMsg}`, Date.now() + "-error", true);
+                         addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
+                         updateLastMessageControls(); // Ensure controls are updated even after API error message
                     } else {
                          console.error("Unknown API response structure:", data);
-                         addMessageToDOM('assistant', `Неожиданный ответ от сервера.`, Date.now() + "-error", true);
+                         addMessageToDOM('assistant', `Неожиданный ответ от сервера.`, Date.now() + "-unknownerror", true);
+                         updateLastMessageControls(); // Ensure controls are updated after unknown error message
                     }
                 })
-                .catch(error => {
+                .catch(error => { // Catch errors from fetch, network, response.ok check, JSON parsing, or thrown in .then blocks
                     console.error("Ошибка при отправке сообщения:", error);
-                    removeMessageFromDOM(loadingMsgId);
-                    addMessageToDOM('assistant', `Ошибка сети или сервера: ${error.message}`, Date.now() + "-error", true);
+                    removeMessageFromDOM(loadingMsgId); // Ensure loader is removed on any error
+
+                    // Safely get the error message, whether it's an Error object or something else
+                    const displayError = error instanceof Error ? error.message : String(error);
+                    addMessageToDOM('assistant', `Ошибка сети или сервера: ${escapeHtml(displayError)}`, Date.now() + "-fetcherror", true);
+                    updateLastMessageControls(); // Ensure controls are updated after displaying the fetch/network error message
                 });
             }
 
@@ -1443,36 +1472,35 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.dataset.id = id;
                 messageDiv.className = `message ${role}-message`;
-                if (isError) messageDiv.style.color = '#ff4d4d';
+                if (isError) messageDiv.style.color = '#ff4d4d'; // Consider a class instead
 
                 let displayContent = '';
                  if (role === 'assistant' && !isTemp && !isError) {
-                    // Format assistant messages (not temp/error ones)
                     displayContent = formatAssistantMessage(rawContent);
+                 } else if (isTemp) {
+                    displayContent = rawContent; // Keep HTML for loader
                  } else {
-                     // For user, temp, or error messages, just escape the raw content
-                     displayContent = escapeHtml(rawContent);
+                     displayContent = escapeHtml(rawContent); // Escape user messages and errors
                  }
 
-                messageDiv.innerHTML = displayContent; // Set the potentially formatted/escaped content
+                messageDiv.innerHTML = displayContent;
 
-                 // --- MODIFICATION START: Trigger Prism Highlighting ---
+                 // Trigger Prism Highlighting only for non-temp, non-error assistant messages
                  if (role === 'assistant' && !isTemp && !isError) {
-                     // Find all <code> blocks within <pre> blocks *in this specific message*
-                     // and tell Prism to highlight them.
-                     messageDiv.querySelectorAll('pre code[class*="language-"]').forEach((block) => {
-                         // Use Prism.highlightElement for efficiency
-                         Prism.highlightElement(block);
+                     messageDiv.querySelectorAll('pre[class*="language-"] code[class*="language-"]').forEach((block) => {
+                         Prism.highlightElement(block.parentElement); // Highlight the <pre> or <code>? Test which works better. Often highlightElement(block) is enough if structure is code > pre. If it's pre > code, highlight pre. Let's try pre.
+                         // Prism.highlightElement(block); // Original attempt
                      });
                  }
-                 // --- MODIFICATION END ---
 
+                 // Add controls only for non-temporary messages
                  if (!isTemp) {
                      const controlsDiv = createMessageControls(id, role);
                      messageDiv.appendChild(controlsDiv);
                  }
 
                 chatContainer.appendChild(messageDiv);
+                // Scroll to bottom smoothly
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
             }
 
@@ -1487,28 +1515,20 @@
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'message-controls';
 
-                // Copy Button (always uses original content from history)
+                // Copy Button (Always add)
                  const copyBtn = document.createElement('button');
-                 copyBtn.className = 'control-btn';
+                 copyBtn.className = 'control-btn copy-btn';
                  copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
                  copyBtn.title = 'Копировать';
                  copyBtn.addEventListener('click', () => copyMessageContent(messageId));
                  controlsDiv.appendChild(copyBtn);
 
+                 // Regenerate Button (REMOVED FROM HERE - will be added by updateLastMessageControls)
+                 // We no longer check isLastAssistant here.
 
-                 // Regenerate Button (only for last assistant message - simpler logic needed)
-                 if (role === 'assistant') {
-                    const regenerateBtn = document.createElement('button');
-                    regenerateBtn.className = 'control-btn';
-                    regenerateBtn.innerHTML = '<i class="fas fa-redo"></i>';
-                    regenerateBtn.title = 'Регенерировать';
-                    regenerateBtn.addEventListener('click', () => regenerateMessageHandler(messageId));
-                    controlsDiv.appendChild(regenerateBtn);
-                }
-
-                // Delete Button
+                // Delete Button (Always add)
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'control-btn';
+                deleteBtn.className = 'control-btn delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteBtn.title = 'Удалить';
                 deleteBtn.addEventListener('click', () => confirmDeleteHandler(messageId));
@@ -1518,13 +1538,21 @@
             }
 
              function copyMessageContent(messageId) {
-                 // **Get original content from history, NOT from formatted DOM**
                  const message = chatHistory.find(msg => msg.id === messageId);
                  if (message && message.content) {
-                     navigator.clipboard.writeText(message.content) // Copy original text
+                     navigator.clipboard.writeText(message.content)
                          .then(() => {
-                             console.log("Original message copied to clipboard");
-                             // Optional feedback (e.g., change icon temporarily)
+                             console.log("Original message copied:", messageId);
+                             // Optional: Visual feedback (e.g., temporary checkmark)
+                             const copyBtn = document.querySelector(`.message[data-id="${messageId}"] .copy-btn i`);
+                             if(copyBtn) {
+                                 copyBtn.classList.remove('fa-copy');
+                                 copyBtn.classList.add('fa-check');
+                                 setTimeout(() => {
+                                     copyBtn.classList.remove('fa-check');
+                                     copyBtn.classList.add('fa-copy');
+                                 }, 1500);
+                             }
                          })
                          .catch(err => {
                              console.error("Failed to copy message:", err);
@@ -1532,13 +1560,6 @@
                          });
                  } else {
                       console.warn("Could not find message in history to copy:", messageId);
-                       // Fallback: try copying from DOM (might get HTML) - less ideal
-                       const messageElement = chatContainer.querySelector(`.message[data-id="${messageId}"]`);
-                       if (messageElement) {
-                            navigator.clipboard.writeText(messageElement.innerText)
-                                .then(() => console.log("Copied innerText as fallback"))
-                                .catch(err => console.error("Fallback copy failed:", err));
-                       }
                  }
              }
 
@@ -1553,76 +1574,60 @@
                 const indexToDelete = chatHistory.findIndex(msg => msg.id === messageToDelete);
 
                 if (indexToDelete !== -1) {
-                     chatHistory.splice(indexToDelete, 1);
-                     removeMessageFromDOM(messageToDelete);
-                     saveChats(); // Save after deletion
+                     chatHistory.splice(indexToDelete, 1); // Remove from history first
+                     removeMessageFromDOM(messageToDelete); // Then remove from DOM
+
+                     saveCurrentChatState(); // Save after deletion
                      console.log(`Message ${messageToDelete} deleted.`);
-                     if (chatHistory.length === 0 && currentChatId !== null) {
-                          // If chat exists but is now empty after delete, show welcome
+
+                     // Update controls on the *new* last message
+                     updateLastMessageControls(); // <--- ENSURE THIS IS CALLED
+
+                     if (chatHistory.length === 0) {
                           displayWelcomeMessage();
-                          // Optionally update chat title or remove chat if preferred
-                     } else if (currentChatId === null && chatHistory.length === 0) {
-                         // If it was a new chat that became empty, just show welcome
-                         displayWelcomeMessage();
                      }
                 } else {
                      console.warn("Message to delete not found in history:", messageToDelete);
                      removeMessageFromDOM(messageToDelete); // Still try to remove from DOM
+                     updateLastMessageControls(); // Still update controls just in case
                 }
 
                 messageToDelete = null;
                 toggleModal(deleteModal, false);
-            }
+            }   
 
             function regenerateMessageHandler(assistantMessageId) {
-                const assistantMsgIndex = chatHistory.findIndex(msg => msg.id === assistantMessageId && msg.role === 'assistant');
+                 const assistantMsgIndex = chatHistory.findIndex(msg => msg.id === assistantMessageId && msg.role === 'assistant');
 
-                if (assistantMsgIndex === -1) {
-                    console.error("Cannot regenerate: Assistant message not found or invalid ID.", assistantMessageId);
-                    return;
-                }
+                 // We only allow regenerating the *very last* assistant message
+                 if (assistantMsgIndex !== chatHistory.length - 1) {
+                      console.warn("Cannot regenerate: Not the last assistant message.", assistantMessageId);
+                      // Optional: Add user feedback alert("Можно регенерировать только последний ответ.")
+                      return;
+                 }
 
-                const messagesToRemove = chatHistory.splice(assistantMsgIndex);
-                console.log("Removing messages for regeneration:", messagesToRemove.map(m => m.id));
-                messagesToRemove.forEach(msg => removeMessageFromDOM(msg.id));
+                // Remove the assistant message to be regenerated
+                const messageToRemove = chatHistory.pop();
+                removeMessageFromDOM(messageToRemove.id);
+                saveCurrentChatState(); // Save state *before* sending request
 
                 if (chatHistory.length === 0) {
                     console.error("Cannot regenerate: No preceding messages found.");
                      displayWelcomeMessage();
-                      const currentChat = chats.find(c => c.id === currentChatId);
-                      if (currentChat) {
-                          currentChat.history = [];
-                          saveChats();
-                      }
                     return;
                 }
 
-                 const currentChat = chats.find(c => c.id === currentChatId);
-                 if (currentChat) {
-                     currentChat.history = [...chatHistory];
-                     saveChats();
-                 }
-
+                // Prepare and send the request again, using the history *without* the last assistant message
                 const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
 
                 let effectiveModelId = chatSettings.model;
                 let effectiveProvider = chatSettings.provider;
-                const currentModelInfo = modelsData[chatSettings.modelKey];
 
-                if (currentModelInfo) {
-                    if (chatSettings.thinkingMode && currentModelInfo.thinking_model) {
-                        effectiveModelId = currentModelInfo.thinking_model;
-                        effectiveProvider = currentModelInfo.provider;
-                         console.log(`Regenerating with thinking model: ${effectiveModelId}`);
-                    } else {
-                        effectiveModelId = currentModelInfo.model;
-                        effectiveProvider = currentModelInfo.provider;
-                        console.log(`Regenerating with base model: ${effectiveModelId}`);
-                    }
+                 if (chatSettings.thinkingMode && chatSettings.thinkingModel) {
+                    effectiveModelId = chatSettings.thinkingModel;
+                    console.log(`Regenerating with thinking model: ${effectiveModelId} via provider: ${effectiveProvider}`);
                 } else {
-                     console.error("Cannot regenerate: Current model info not found.");
-                      addMessageToDOM('assistant', "Ошибка: Не удалось определить настройки модели для регенерации.", Date.now() + "-error", true);
-                     return;
+                    console.log(`Regenerating with base model: ${effectiveModelId} via provider: ${effectiveProvider}`);
                 }
 
                 const loadingMsgId = Date.now() + "-loading";
@@ -1635,33 +1640,32 @@
                         messages: messagesPayload,
                         provider: effectiveProvider,
                         model: effectiveModelId,
-                        max_tokens: chatSettings.maxTokens
+                        max_tokens: chatSettings.maxTokens,
+                        temperature: chatSettings.temperature
                     })
                  })
                  .then(response => {
                      removeMessageFromDOM(loadingMsgId);
                       if (!response.ok) {
-                         return response.json().then(errData => {
-                              const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
-                              throw new Error(errorMessage);
-                          }).catch(() => { throw new Error(`HTTP error ${response.status}`); });
-                     }
+                          // Re-add the original message if regeneration fails? Maybe too complex. Show error instead.
+                          return response.json().then(errData => {
+                                const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
+                                throw new Error(errorMessage);
+                            }).catch(() => { throw new Error(`HTTP error ${response.status}`); });
+                      }
                      return response.json();
                  })
                  .then(data => {
                     if (data.response) {
                         const newAssistantMessage = { role: 'assistant', content: data.response, id: Date.now() + "-assistant" };
-                        addMessageToDOM('assistant', data.response, newAssistantMessage.id);
+                        addMessageToDOM('assistant', data.response, newAssistantMessage.id); // Adds controls automatically
                         chatHistory.push(newAssistantMessage);
-                         const currentChat = chats.find(c => c.id === currentChatId);
-                         if (currentChat) {
-                             currentChat.history = [...chatHistory];
-                             saveChats();
-                         }
+                        saveCurrentChatState(); // Save state *after* successful regeneration
                     } else if (data.error || data.detail) {
                          const errorMsg = data.error || data.detail;
                          console.error("API Error during regeneration:", errorMsg);
-                         addMessageToDOM('assistant', `Ошибка API при регенерации: ${errorMsg}`, Date.now() + "-error", true);
+                         addMessageToDOM('assistant', `Ошибка API при регенерации: ${escapeHtml(errorMsg)}`, Date.now() + "-error", true);
+                         // Should we add the old message back? For now, just show error.
                     } else {
                          console.error("Unknown API response during regeneration:", data);
                          addMessageToDOM('assistant', `Неожиданный ответ от сервера при регенерации.`, Date.now() + "-error", true);
@@ -1670,13 +1674,66 @@
                  .catch(error => {
                      console.error("Ошибка при регенерации:", error);
                      removeMessageFromDOM(loadingMsgId);
-                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${error.message}`, Date.now() + "-error", true);
+                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${escapeHtml(error.message)}`, Date.now() + "-error", true);
                  });
             }
 
+            function updateLastMessageControls() {
+                // Find the last message element in the DOM
+                const lastMessageElement = chatContainer.lastElementChild;
+                // Ensure it's a message element and not the welcome container etc.
+                if (!lastMessageElement || !lastMessageElement.classList.contains('message')) {
+                     // If the last element isn't a message (e.g., chat cleared), remove potential leftover buttons from previous states (less critical but cleaner)
+                     // Or simply return if there are no messages.
+                     return;
+                }
+
+                const lastMessageId = lastMessageElement.dataset.id;
+                const lastMessageData = chatHistory.find(msg => msg.id === lastMessageId);
+
+                // Find the controls container within the last message
+                 let controlsDiv = lastMessageElement.querySelector('.message-controls');
+                 // If controls don't exist for some reason (e.g., temporary message?), create them.
+                 if (!controlsDiv) {
+                    if (lastMessageData) { // Only add if we have data for it
+                        controlsDiv = createMessageControls(lastMessageId, lastMessageData.role);
+                        lastMessageElement.appendChild(controlsDiv);
+                    } else {
+                        return; // Cannot update controls if data is missing
+                    }
+                 }
+
+                // Find any existing regenerate button within these controls
+                const existingRegenerateBtn = controlsDiv.querySelector('.regenerate-btn');
+
+                // Decide if the regenerate button should be present
+                const shouldHaveRegenerate = lastMessageData &&
+                                             lastMessageData.role === 'assistant' &&
+                                             chatHistory.length > 0 && // Must have history
+                                             chatHistory[chatHistory.length - 1].id === lastMessageId; // Must be the actual last message in history
+
+                if (shouldHaveRegenerate && !existingRegenerateBtn) {
+                    // Add the regenerate button if it should be there but isn't
+                    const regenerateBtn = document.createElement('button');
+                    regenerateBtn.className = 'control-btn regenerate-btn';
+                    regenerateBtn.innerHTML = '<i class="fas fa-redo"></i>';
+                    regenerateBtn.title = 'Регенерировать';
+                    regenerateBtn.addEventListener('click', () => regenerateMessageHandler(lastMessageId));
+                    // Insert it after the copy button for consistency, or just append
+                    const copyBtn = controlsDiv.querySelector('.copy-btn');
+                    if (copyBtn && copyBtn.nextSibling) {
+                        controlsDiv.insertBefore(regenerateBtn, copyBtn.nextSibling);
+                    } else {
+                        controlsDiv.appendChild(regenerateBtn); // Append if copy button not found or is last
+                    }
+                } else if (!shouldHaveRegenerate && existingRegenerateBtn) {
+                    // Remove the regenerate button if it shouldn't be there but is
+                    existingRegenerateBtn.remove();
+                }
+            }
 
             function openSettings() {
-                updateSettingsUI();
+                updateSettingsUI(); // Ensure panel shows current state
                 settingsPanel.classList.add('open');
             }
 
@@ -1685,59 +1742,41 @@
             }
 
             function saveSettingsHandler() {
-                updateChatSettingsFromSelection();
+                // Model selection is handled instantly via modal click.
+                // Update other settings from the panel inputs.
                 chatSettings.maxTokens = parseInt(maxTokens.value) || 2048;
-
-                if (!thinkingModeToggle.disabled) {
-                    chatSettings.thinkingMode = thinkingModeToggle.checked;
-                } else {
-                    chatSettings.thinkingMode = false;
-                }
-
-                 // If a chat is loaded, update its specific settings
-                 if (currentChatId !== null) {
-                     const currentChat = chats.find(c => c.id === currentChatId);
-                     if (currentChat) {
-                          currentChat.settings = { ...chatSettings };
-                          saveChats(); // Save the updated chat settings
-                          console.log("Settings saved for chat:", currentChatId, currentChat.settings);
-                     }
+                chatSettings.temperature = parseFloat(temperature.value) || 1; // Use parseFloat for temperature
+                 // Only update thinking mode if the toggle is enabled
+                 if (!thinkingModeToggle.disabled) {
+                     chatSettings.thinkingMode = thinkingModeToggle.checked;
                  } else {
-                     console.log("Global/New Chat Settings saved:", JSON.parse(JSON.stringify(chatSettings)));
+                     // If disabled (because model doesn't support it), ensure it's false
+                     chatSettings.thinkingMode = false;
                  }
 
+                 // Save updated settings to the current chat if one is active
+                 saveCurrentChatState();
 
+                 console.log("Settings updated:", JSON.parse(JSON.stringify(chatSettings)));
                 closeSettingsPanel();
             }
 
             function updateThinkingModeAvailability() {
-                if (!modelsData || !modelSelect.value) {
-                    thinkingModeToggle.disabled = true;
-                    thinkingModeContainer.classList.add('disabled');
-                    thinkingModeToggle.checked = false;
-                    return;
-                }
+                 const modelSupportsThinking = !!chatSettings.thinkingModel; // Check if a thinking model URL is stored
 
-                const selectedModelKey = modelSelect.value;
-                const modelInfo = modelsData[selectedModelKey];
-                const hasThinkingModel = modelInfo && modelInfo.thinking_model;
-
-                if (hasThinkingModel) {
-                    thinkingModeToggle.disabled = false;
-                    thinkingModeContainer.classList.remove('disabled');
-                    // Apply current setting state ONLY if enabling
+                 if (modelSupportsThinking) {
+                     thinkingModeToggle.disabled = false;
+                     thinkingModeContainer.classList.remove('disabled');
+                     // Restore checked state based on current setting
                      thinkingModeToggle.checked = chatSettings.thinkingMode;
-                } else {
-                    thinkingModeToggle.disabled = true;
-                    thinkingModeContainer.classList.add('disabled');
-                    thinkingModeToggle.checked = false;
-                     // Force the setting off if the model doesn't support it
-                     if (chatSettings.thinkingMode) {
-                         chatSettings.thinkingMode = false;
-                     }
-                }
+                 } else {
+                     thinkingModeToggle.disabled = true;
+                     thinkingModeContainer.classList.add('disabled');
+                     thinkingModeToggle.checked = false;
+                     // Force the setting off in memory if the model doesn't support it
+                     chatSettings.thinkingMode = false;
+                 }
             }
-
 
             function createNewChat() {
                 currentChatId = null;
@@ -1749,18 +1788,29 @@
 
                 // Reset settings to application defaults (based on first available model)
                 if (modelsData && Object.keys(modelsData).length > 0) {
-                     const defaultModelKey = Object.keys(modelsData)[0];
-                     const defaultModelInfo = modelsData[defaultModelKey];
-                     modelSelect.value = defaultModelKey; // Set dropdown to default
-                     // Reset chatSettings object
-                     chatSettings = {
-                         modelKey: defaultModelKey,
-                         model: defaultModelInfo.model,
-                         provider: defaultModelInfo.provider,
-                         thinkingMode: false, // Default off
-                         maxTokens: 2048 // Default tokens
-                     };
-                     updateSettingsUI(); // Update panel UI to reflect these defaults
+                     const firstProviderKey = Object.keys(modelsData)[0];
+                     const providerModels = modelsData[firstProviderKey];
+                     const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider');
+                     if (firstModelKey) {
+                         const modelInfo = providerModels[firstModelKey];
+                         const categoryProvider = providerModels.provider;
+                         const actualProvider = modelInfo.provider || categoryProvider;
+
+                         // Reset chatSettings object
+                         chatSettings = {
+                             modelKey: firstModelKey,
+                             model: modelInfo.model,
+                             provider: actualProvider,
+                             thinkingModel: modelInfo.thinking_model || null,
+                             thinkingMode: false, // Default off
+                             maxTokens: 2048, // Default tokens
+                             temperature: 1    // Default temp
+                         };
+                         updateSettingsUI(); // Update panel UI to reflect these defaults
+                     }
+                } else {
+                    // Handle case where models failed to load - keep settings empty?
+                    console.warn("Cannot reset settings, models not loaded.");
                 }
 
                 if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
@@ -1770,10 +1820,10 @@
             }
 
             function displayWelcomeMessage() {
-                 chatContainer.innerHTML = '';
+                 chatContainer.innerHTML = ''; // Clear existing messages
                  const welcomeDiv = document.createElement('div');
                  welcomeDiv.className = 'welcome-container';
-                 welcomeDiv.id = 'welcomeContainer';
+                 welcomeDiv.id = 'welcomeContainer'; // Re-add ID if needed
                  welcomeDiv.innerHTML = `
                      <h2>Добро пожаловать в ИИ-чат</h2>
                      <p>Начните новый разговор с искусственным интеллектом. Вы можете настроить модель и параметры чата в настройках.</p>
@@ -1786,25 +1836,27 @@
                 const newChatId = Date.now();
                 currentChatId = newChatId;
 
-                let title = firstMessageContent.length > 30
-                    ? escapeHtml(firstMessageContent.substring(0, 30)) + '...' // Escape title
-                    : escapeHtml(firstMessageContent);
+                // Generate a title (escaped)
+                let title = firstMessageContent.length > 35
+                    ? escapeHtml(firstMessageContent.substring(0, 35)).trim() + '...'
+                    : escapeHtml(firstMessageContent).trim();
+                if (!title) title = "Без названия"; // Fallback title
 
                 // Use the currently configured chat settings for this new chat
                 const newChat = {
                     id: newChatId,
                     title: title,
-                    history: [...chatHistory], // History *includes* the first user message now
-                    settings: { ...chatSettings } // Settings active when chat was created
+                    history: [...chatHistory], // History includes the first user message sent
+                    settings: { ...chatSettings } // Clone current settings for this chat
                 };
 
-                chats.unshift(newChat);
+                chats.unshift(newChat); // Add to the beginning of the list
                  renderChatList(); // Renders list with new chat at top and active
                  chatTitleText.textContent = title; // Update header title
-                 saveChats();
+                 saveChats(); // Save immediately after creation
             }
 
-             function renderChatList() {
+            function renderChatList() {
                  chatList.innerHTML = '';
 
                  if (chats.length === 0) {
@@ -1820,22 +1872,27 @@
                          chatItem.classList.add('active');
                      }
 
-                     // Use textContent for title to prevent XSS if title contains HTML-like chars
+                     // Use textContent for title to prevent XSS
                      const titleDiv = document.createElement('div');
                      titleDiv.className = 'chat-title';
-                     titleDiv.textContent = chat.title; // Safely set title
+                     titleDiv.textContent = chat.title || "Без названия"; // Use safe title
 
-                     chatItem.innerHTML = `
-                         <div class="chat-icon">
-                             <i class="fas fa-comment-dots"></i>
-                         </div>
-                     `;
-                     chatItem.appendChild(titleDiv); // Append the safe title
+                     chatItem.innerHTML = `<div class="chat-icon"><i class="fas fa-comment-dots"></i></div>`;
+                     chatItem.appendChild(titleDiv);
 
-                     // TODO: Add delete button for chat items here
+                     // TODO: Add delete chat button here
+                     // const deleteChatBtn = document.createElement('button');
+                     // deleteChatBtn.innerHTML = '<i class="fas fa-times"></i>';
+                     // deleteChatBtn.className = 'delete-chat-btn control-btn'; // Reuse styles maybe
+                     // deleteChatBtn.style.marginLeft = 'auto'; // Push to the right
+                     // deleteChatBtn.title = 'Удалить чат';
+                     // deleteChatBtn.onclick = (e) => { e.stopPropagation(); /* Prevent loading chat */; confirmDeleteChat(chat.id); };
+                     // chatItem.appendChild(deleteChatBtn);
 
                      chatItem.addEventListener('click', () => {
-                         loadChat(chat.id);
+                         if (chat.id !== currentChatId) { // Avoid reloading if already active
+                            loadChat(chat.id);
+                         }
                      });
 
                      chatList.appendChild(chatItem);
@@ -1846,40 +1903,58 @@
                  const chatToLoad = chats.find(c => c.id === chatId);
                  if (!chatToLoad) {
                      console.error("Chat not found:", chatId);
+                     // Maybe show an error or default to new chat
                      createNewChat();
                      return;
                  }
 
                  currentChatId = chatToLoad.id;
-                 chatHistory = [...chatToLoad.history]; // Use copy
-                 // **CRITICAL: Load chat-specific settings**
-                 chatSettings = { ...chatToLoad.settings }; // Use copy
+                 // IMPORTANT: Create deep copies to avoid modifying the original `chats` array unintentionally
+                 chatHistory = JSON.parse(JSON.stringify(chatToLoad.history || []));
+                 // Ensure settings are fully loaded, providing defaults if missing
+                 chatSettings = {
+                     modelKey: "", // Defaults overwritten below
+                     model: "",
+                     provider: "",
+                     thinkingModel: null,
+                     thinkingMode: false,
+                     maxTokens: 2048,
+                     temperature: 1,
+                     ...(chatToLoad.settings || {}) // Merge saved settings, overwriting defaults
+                 };
+
 
                  // Update UI
-                 chatTitleText.textContent = chatToLoad.title; // Use textContent
-                 chatContainer.innerHTML = '';
+                 chatTitleText.textContent = chatToLoad.title || "Без названия";
+                 chatContainer.innerHTML = ''; // Clear current messages
                  if (chatHistory.length > 0) {
                     chatHistory.forEach(msg => addMessageToDOM(msg.role, msg.content, msg.id));
+                    updateLastMessageControls(); // Ensure controls on the last message are correct
                  } else {
-                     // If loaded chat is empty, show welcome message
-                     displayWelcomeMessage();
+                     displayWelcomeMessage(); // Show welcome if chat is empty
                  }
-                 updateSettingsUI(); // Reflect loaded settings in panel
-                 renderChatList(); // Highlight active chat
+
+                 updateSettingsUI(); // Reflect loaded settings in the settings panel
+                 renderChatList(); // Highlight the newly active chat in the list
 
                  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                     toggleSidebar();
+                     toggleSidebar(); // Close sidebar on mobile after selection
                  }
                  messageInput.focus();
              }
 
 
             function loadChats() {
-                // Replace with actual loading logic (e.g., localStorage)
                  const savedChats = localStorage.getItem('aiChats');
                  if (savedChats) {
                      try {
                          chats = JSON.parse(savedChats);
+                         // Basic validation - ensure it's an array
+                         if (!Array.isArray(chats)) {
+                            console.warn("Saved chats data is not an array, resetting.");
+                            chats = [];
+                            localStorage.removeItem('aiChats');
+                         }
                          console.log("Loaded chats from localStorage:", chats.length);
                      } catch (e) {
                          console.error("Failed to parse saved chats:", e);
@@ -1888,27 +1963,48 @@
                      }
                  } else {
                     chats = []; // Start empty if nothing saved
-                     console.log("No saved chats found, starting fresh.");
+                    console.log("No saved chats found, starting fresh.");
                  }
-                 renderChatList();
-                 // Optionally load the first chat or default to new chat screen
-                 if (chats.length > 0) {
-                     // loadChat(chats[0].id); // Load the most recent chat
-                     // Or just stay on the new chat screen:
-                     createNewChat();
+                 renderChatList(); // Render whatever was loaded (or empty state)
+
+                 // Decide what to show initially: most recent chat or new chat screen
+                 if (chats.length > 0 && chats[0].id) {
+                      // Check if models are loaded before attempting to load chat
+                      if (modelsData) {
+                         loadChat(chats[0].id); // Load the most recent chat
+                      } else {
+                          // Models not ready yet, wait or default to new chat? Defaulting is safer.
+                          console.log("Models not ready, starting with a new chat screen initially.");
+                          createNewChat();
+                      }
                  } else {
-                      createNewChat(); // Ensure new chat state if list is empty
+                      createNewChat(); // Start new chat if no chats saved or models aren't ready
                  }
             }
 
             function saveChats() {
+                // Debounce or throttle this if called very frequently
                 try {
                     localStorage.setItem('aiChats', JSON.stringify(chats));
-                    // console.log("Chats saved to localStorage.");
+                    // console.log("Chats saved."); // Can be noisy
                 } catch (e) {
                     console.error("Failed to save chats to localStorage:", e);
-                    // Handle potential storage errors (e.g., quota exceeded)
+                    // Consider notifying the user if storage is full
+                    alert("Ошибка: Не удалось сохранить чаты. Возможно, хранилище переполнено.");
                 }
+            }
+
+            // Helper to save history and settings for the currently active chat
+            function saveCurrentChatState() {
+                 if (currentChatId !== null) {
+                     const currentChatIndex = chats.findIndex(c => c.id === currentChatId);
+                     if (currentChatIndex !== -1) {
+                         chats[currentChatIndex].history = [...chatHistory];
+                         chats[currentChatIndex].settings = { ...chatSettings };
+                         saveChats(); // Persist changes
+                     }
+                 }
+                 // No need to save if it's a new chat (currentChatId is null) until first message
             }
 
             function initChatListPlaceholder() {
@@ -1920,6 +2016,7 @@
             }
 
             function toggleModal(modalElement, show) {
+                 if (!modalElement) return;
                 if (show) {
                     modalElement.classList.add('visible');
                 } else {

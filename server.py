@@ -18,7 +18,7 @@ def get_models():
     except Exception as e:
         print(f"Error loading models: {e}")
         return jsonify([]), 500
-def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking", max_tokens=2048):
+def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthropic/claude-3.7-sonnet:thinking", max_tokens=2048, temperature=1):
 #def call_deepseek_api(messages, model="deepseek-reasoner"):
     url = "https://api.puter.com/drivers/call"
     headers = {
@@ -34,9 +34,10 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
         "interface": "puter-chat-completion",
         "driver": str(provider),
         "test_mode": False,
-        "max_tokens": int(max_tokens),
         "method": "complete",
         "args": {
+            "max_completion_tokens": int(max_tokens),
+            "temperature": int(temperature),
             "messages": messages,  # Теперь принимаем полную историю сообщений
             "model": model
         }
@@ -47,6 +48,7 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
         response.raise_for_status()
         result = response.json()
         print(result['metadata'])
+        print(result['result'])
         return result['result']['message']['content']
 
     except requests.exceptions.RequestException as e:
@@ -67,6 +69,7 @@ def chat():
     messages = data.get("messages")
     provider = data.get("provider")  # Получаем провайдера
     max_tokens = data.get("max_tokens")
+    temperature = data.get("temperature")
     model = data.get("model")
 
 
@@ -80,7 +83,7 @@ def chat():
         if msg["role"] not in ("user", "assistant"):
             return jsonify({"error": "Недопустимая роль сообщения"}), 400
 
-    ai_response = call_deepseek_api(messages, provider, model, max_tokens)
+    ai_response = call_deepseek_api(messages, provider, model, max_tokens, temperature)
     return jsonify({"response": ai_response})
 
 if __name__ == "__main__":
