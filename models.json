@@ -52,12 +52,30 @@
       "provider": "openai-completion"
     },
     "Anthropic": {
-      "Claude 3.7": {
+      "Claude 3.7 Sonnet": {
         "model": "openrouter:anthropic/claude-3.7-sonnet",
         "thinking_model": "openrouter:anthropic/claude-3.7-sonnet:thinking"
       },
-      "Claude 3.5": {
+      "Claude 3.5 Sonnet": {
         "model": "openrouter:anthropic/claude-3.5-sonnet"
+      },
+      "Claude 3.5 Haiku": {
+        "model": "openrouter:anthropic/claude-3.5-haiku"
+      },
+      "Claude 3 Sonnet": {
+        "model": "openrouter:anthropic/claude-3-sonnet"
+      },
+      "Claude 3 Opus": {
+        "model": "openrouter:anthropic/claude-3-opus"
+      },
+      "Claude 3 Haiku": {
+        "model": "openrouter:anthropic/claude-3-haiku"
+      },
+      "Claude 2.1": {
+        "model": "openrouter:anthropic/claude-2.1"
+      },
+      "Claude 2.0": {
+        "model": "openrouter:anthropic/claude-2.0"
       },
       "provider": "openrouter"
     },

@@ -829,7 +829,7 @@
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i> <!-- Icon updated dynamically -->
             </button>
-            <span>2025.4.4</span>
+            <span>2025.4.5</span>
         </div>
     </div>
 
@@ -1040,44 +1040,57 @@
              * @param {string} content Raw assistant message content.
              * @returns {string} HTML formatted string, safe for innerHTML.
              */
-            function formatAssistantMessage(content) {
+             function formatAssistantMessage(content) {
                 let processedContent = content;
                 const codeBlocks = [];
 
-                // 1. Extract and escape code blocks
+                // 1. Extract and escape code blocks (no change here)
                 processedContent = processedContent.replace(/^```(\w*)\n([\s\S]*?)\n```$/gm, (match, lang, code) => {
-                    // Escape the language identifier for the class name
                     const safeLang = escapeHtml(lang.trim().toLowerCase() || 'plaintext');
                     const languageClass = `language-${safeLang}`;
-                    // Escape the code content itself thoroughly
                     const escapedCode = escapeHtml(code);
-                    // Build the HTML structure for the code block
                     const blockHtml = `<pre class="${languageClass}"><code class="${languageClass}">${escapedCode}</code></pre>`;
                     const placeholder = `%%CODEBLOCK_${codeBlocks.length}%%`;
                     codeBlocks.push(blockHtml);
                     return placeholder;
                 });
 
-                // 2. Process remaining lines for paragraphs and headings
+                // 2. Process remaining lines for paragraphs, headings, and inline formatting
                 const lines = processedContent.split('\n');
                 let formattedHtml = '';
                 let currentParagraph = '';
+
+                /**
+                 * Helper function to apply inline formatting (bold, italic) to an already escaped string.
+                 * @param {string} escapedText The HTML-escaped text line.
+                 * @returns {string} Text with inline formatting tags applied.
+                 */
+                function applyInlineFormatting(escapedText) {
+                    // Replace **bold** or __bold__ with <strong>...</strong>
+                    // Uses non-greedy match (.+?) to handle multiple instances per line correctly.
+                    // The captured group (p1 or p2) is already escaped.
+                    let formattedText = escapedText.replace(/\*\*(.+?)\*\*|__(.+?)__/g, (match, p1, p2) => `<strong>${p1 || p2}</strong>`);
+
+                    // Replace *italic* or _italic_ with <em>...</em>
+                    // Applied after bold to avoid conflicts (e.g., ***text*** could be bold+italic).
+                    // This basic version handles simple cases. Nested or complex combos might need a real parser.
+                    formattedText = formattedText.replace(/\*(.+?)\*|_(.+?)_/g, (match, p1, p2) => `<em>${p1 || p2}</em>`);
+                    return formattedText;
+                }
 
                 lines.forEach(line => {
                     // Check for code block placeholders first
                     const placeholderMatch = line.match(/^%%CODEBLOCK_(\d+)%%$/);
                     if (placeholderMatch) {
-                        // If we were building a paragraph, close it first
                         if (currentParagraph) {
-                            formattedHtml += `<p>${currentParagraph}</p>\n`;
+                            formattedHtml += `<p>${currentParagraph}</p>\n`; // Close previous paragraph
                             currentParagraph = '';
                         }
                         const index = parseInt(placeholderMatch[1], 10);
                         if (index >= 0 && index < codeBlocks.length) {
                             formattedHtml += codeBlocks[index] + '\n'; // Add the pre-formatted code block
                         } else {
-                             // Should not happen, but escape if placeholder is invalid
-                             formattedHtml += `<p>${escapeHtml(line)}</p>\n`;
+                             formattedHtml += `<p>${escapeHtml(line)}</p>\n`; // Fallback
                         }
                         return; // Move to next line
                     }
@@ -1085,29 +1098,32 @@
                     // Check for headings
                     const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
                     if (headingMatch) {
-                        // Close any open paragraph
                         if (currentParagraph) {
-                            formattedHtml += `<p>${currentParagraph}</p>\n`;
+                            formattedHtml += `<p>${currentParagraph}</p>\n`; // Close previous paragraph
                             currentParagraph = '';
                         }
                         const level = headingMatch[1].length;
-                        // Escape the heading text content
-                        const text = escapeHtml(headingMatch[2].trim());
-                        formattedHtml += `<h${level}>${text}</h${level}>\n`;
+                        // Escape the heading text content first
+                        const headingText = escapeHtml(headingMatch[2].trim());
+                        // Then apply inline formatting
+                        const formattedHeadingText = applyInlineFormatting(headingText);
+                        formattedHtml += `<h${level}>${formattedHeadingText}</h${level}>\n`;
                     }
                     // Handle empty lines (paragraph breaks)
                     else if (line.trim() === '') {
                          if (currentParagraph) {
-                            formattedHtml += `<p>${currentParagraph}</p>\n`;
+                            formattedHtml += `<p>${currentParagraph}</p>\n`; // Close paragraph
                             currentParagraph = '';
                          }
                     }
                     // Handle regular text lines
                     else if (line.trim() !== '') {
-                        // Escape line content before adding
+                        // Escape line content first
                         const escapedLine = escapeHtml(line);
+                        // Then apply inline formatting
+                        const formattedLine = applyInlineFormatting(escapedLine);
                         // Add <br> for line breaks within the same paragraph, otherwise start new paragraph content
-                        currentParagraph += (currentParagraph ? '<br>' : '') + escapedLine;
+                        currentParagraph += (currentParagraph ? '<br>' : '') + formattedLine;
                     }
                 });
 
@@ -1651,31 +1667,41 @@
               * @param {string | number} messageId
               * @param {HTMLElement} copyBtnElement The button element for visual feedback.
               */
-             function copyMessageContent(messageId, copyBtnElement) {
-                 const message = chatHistory.find(msg => String(msg.id) === String(messageId)); // Compare as strings
+              function copyMessageContent(messageId, copyBtnElement) {
+                 // Convert messageId to string for reliable comparison
+                 const messageIdStr = String(messageId);
+                 // Find the message in history using string comparison
+                 const message = chatHistory.find(msg => String(msg.id) === messageIdStr);
+
                  if (message?.content) {
                      navigator.clipboard.writeText(message.content)
                          .then(() => {
-                             console.log("Message copied:", messageId);
-                             showToast("Сообщение скопировано");
+                             console.log("Message copied:", messageIdStr);
+                             showToast("Сообщение скопировано"); // Show success toast
+
                              // Visual feedback on the button
                              const icon = copyBtnElement.querySelector('i');
                              if (icon) {
+                                 // Store original classes if needed, but assuming it's always fa-copy initially
                                  icon.classList.remove('fa-copy');
                                  icon.classList.add('fa-check');
+                                 // Revert icon after a delay
                                  setTimeout(() => {
-                                     icon.classList.remove('fa-check');
-                                     icon.classList.add('fa-copy');
-                                 }, 1500);
+                                     // Check if the icon still exists and hasn't been changed by something else
+                                     if(copyBtnElement.querySelector('i.fa-check')) {
+                                         icon.classList.remove('fa-check');
+                                         icon.classList.add('fa-copy');
+                                     }
+                                 }, 1500); // 1.5 seconds feedback
                              }
                          })
                          .catch(err => {
                              console.error("Failed to copy message:", err);
-                             showToast("Не удалось скопировать текст", true);
+                             showToast("Не удалось скопировать текст", true); // Show error toast
                          });
                  } else {
-                      console.warn("Could not find message in history to copy:", messageId);
-                      showToast("Сообщение не найдено в истории", true);
+                      console.warn("Could not find message in history to copy:", messageIdStr);
+                      showToast("Сообщение не найдено в истории", true); // Show error toast
                  }
              }
 
