@@ -829,7 +829,7 @@
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i> <!-- Icon updated dynamically -->
             </button>
-            <span>2025.4.3</span>
+            <span>2025.4.4</span>
         </div>
     </div>
 
@@ -1506,16 +1506,25 @@
                     if (data && data.response) {
                         const assistantMessageId = Date.now() + "-assistant";
                         const assistantMessage = { role: 'assistant', content: data.response, id: assistantMessageId };
-                        addMessageToDOM('assistant', data.response, assistantMessageId); // Add formatted AI response
+
+                        // *** FIX START ***
+                        // Push the message to history *before* adding it to the DOM
                         chatHistory.push(assistantMessage);
-                        saveCurrentChatState(); // Save the full state *after* getting response
+                        // *** FIX END ***
+
+                        // Now call addMessageToDOM. The message ID will be found in chatHistory,
+                        // so the copy/delete controls will be added correctly.
+                        addMessageToDOM('assistant', data.response, assistantMessageId); // Add formatted AI response
+
+                        // Save the full state (already includes the new message)
+                        saveCurrentChatState();
                     } else {
-                         // Handle cases where response is ok but data is missing or has API error
-                         const errorMsg = data?.error || data?.detail || "Ответ от API не содержит ожидаемых данных.";
-                         console.error("API Error or Unexpected Response:", errorMsg, data);
-                         addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
-                         // Don't save state if AI response failed? Or save with the error? Let's not save error.
-                         // Revert history if it was a new chat? Too complex. Just show error.
+                        // Handle cases where response is ok but data is missing or has API error
+                        const errorMsg = data?.error || data?.detail || "Ответ от API не содержит ожидаемых данных.";
+                        console.error("API Error or Unexpected Response:", errorMsg, data);
+                        addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
+                        // Don't save state if AI response failed? Or save with the error? Let's not save error.
+                        // Revert history if it was a new chat? Too complex. Just show error.
                     }
                 })
                 .catch(error => {
@@ -1527,9 +1536,9 @@
                     // Don't save state on fetch errors
                 })
                 .finally(() => {
-                    // Re-enable input/button in case of error? Or leave disabled?
-                    // sendBtn.disabled = messageInput.value.trim() === ''; // Re-evaluate based on input
-                    updateLastMessageControls(); // Ensure controls are updated after response or error
+                    // This ensures the regenerate button is correctly placed on the *actual*
+                    // last message after the DOM update and history update are complete.
+                    updateLastMessageControls();
                 });
             }
 
@@ -1775,8 +1784,8 @@
                      if (data && data.response) {
                          const newAssistantMessageId = Date.now() + "-assistant-regen";
                          const newAssistantMessage = { role: 'assistant', content: data.response, id: newAssistantMessageId };
+                         chatHistory.push(newAssistantMessage);
                          addMessageToDOM('assistant', data.response, newAssistantMessageId); // Adds formatted AI response
-                         chatHistory.push(newAssistantMessage); // Add the new response to history
                          saveCurrentChatState(); // Save state *after* successful regeneration
                      } else {
                          const errorMsg = data?.error || data?.detail || "Ответ от API при регенерации не содержит ожидаемых данных.";
