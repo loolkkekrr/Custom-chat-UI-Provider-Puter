@@ -48,7 +48,7 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
         response.raise_for_status()
         result = response.json()
         print(result['metadata'])
-        print(result['result'])
+        #print(result['result'])
         return result['result']['message']['content']
 
     except requests.exceptions.RequestException as e:
