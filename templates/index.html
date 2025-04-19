@@ -6,7 +6,7 @@
     <title>AI Chat Assistant</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Add prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" id="prismTheme"/>
     <style>
         :root {
             --background-dark: #121212;
@@ -28,7 +28,7 @@
             --disabled-text-dark: #666;
             --disabled-text-light: #bbb;
             --code-bg-dark: #282c34; /* Okaidia-like */
-            --code-bg-light: #f5f2f0; /* GitHub-like */
+            --code-bg-light: #f5f2f0; /* GitHub-like / default prism */
             --code-text-dark: #abb2bf;
             --code-text-light: #333;
             --modal-bg-dark: #242424;
@@ -37,6 +37,12 @@
             --hover-light: rgba(0, 0, 0, 0.05);
             --active-dark: rgba(124, 77, 255, 0.2);
             --active-light: rgba(124, 77, 255, 0.15);
+            --error-color: #ff4d4d;
+            --toast-bg-dark: var(--primary-color);
+            --toast-bg-light: var(--primary-color);
+            --toast-text-dark: white;
+            --toast-text-light: white;
+            --toast-error-bg: var(--error-color);
         }
 
         body {
@@ -63,7 +69,7 @@
             flex-direction: column;
             border-right: 1px solid var(--border-dark);
             overflow: hidden;
-            transition: background-color 0.3s, transform 0.3s;
+            transition: background-color 0.3s, transform 0.3s, border-color 0.3s;
             z-index: 10; /* Ensure sidebar is above content on mobile */
             flex-shrink: 0; /* Prevent sidebar from shrinking */
         }
@@ -80,6 +86,7 @@
             align-items: center;
             border-bottom: 1px solid var(--border-dark);
             flex-shrink: 0;
+            transition: border-color 0.3s;
         }
 
         .light-theme .sidebar-header {
@@ -156,6 +163,7 @@
             align-items: center;
             border-top: 1px solid var(--border-dark);
             flex-shrink: 0;
+            transition: border-color 0.3s;
         }
 
         .light-theme .sidebar-footer {
@@ -170,7 +178,7 @@
             font-size: 16px;
             padding: 8px;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.3s;
         }
 
         .light-theme .theme-toggle {
@@ -200,6 +208,7 @@
             align-items: center;
             border-bottom: 1px solid var(--border-dark);
             flex-shrink: 0;
+             transition: border-color 0.3s;
         }
 
         .light-theme .chat-header {
@@ -237,7 +246,7 @@
             font-size: 16px;
             padding: 8px;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.3s;
         }
 
         .light-theme .settings-btn {
@@ -267,6 +276,7 @@
             text-align: center;
             color: var(--text-dark);
             opacity: 0.8;
+            transition: color 0.3s;
         }
 
         .light-theme .welcome-container {
@@ -290,6 +300,12 @@
             max-width: 90%;
             word-wrap: break-word; /* Ensure long words break */
             line-height: 1.6; /* Improve readability */
+            transition: background-color 0.3s;
+        }
+        .message.error-message {
+            color: var(--error-color);
+            /* Optional: Add a slight background tint for errors */
+            /* background-color: rgba(255, 77, 77, 0.1); */
         }
 
         .user-message {
@@ -297,34 +313,20 @@
             margin-left: auto;
             border-top-right-radius: 2px;
         }
-        .toast-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--primary-color);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            z-index: 1100;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .toast-notification.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .light-theme .toast-notification {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
         .light-theme .user-message {
             background-color: var(--chat-user-light);
         }
+
+        .assistant-message {
+            background-color: var(--chat-ai-dark);
+            margin-right: auto;
+            border-top-left-radius: 0px;
+        }
+        .light-theme .assistant-message {
+            background-color: var(--chat-ai-light);
+        }
+
+         /* Code Blocks inside Assistant Messages */
         .assistant-message pre[class*="language-"] {
             background-color: var(--code-bg-dark);
             padding: 1em;
@@ -334,33 +336,36 @@
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 0.9em;
             line-height: 1.5;
-            white-space: pre;
+            white-space: pre; /* Important for preserving whitespace */
             color: var(--code-text-dark);
+            border: 1px solid var(--border-dark);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
         .light-theme .assistant-message pre[class*="language-"] {
              background-color: var(--code-bg-light);
              color: var(--code-text-light);
              border: 1px solid var(--border-light);
         }
-
-        .assistant-message {
-            background-color: var(--chat-ai-dark);
-            margin-right: auto;
-            border-top-left-radius: 0px;
-        }
         .assistant-message pre[class*="language-"] > code[class*="language-"] {
             font-family: inherit;
-            background: none;
+            background: none; /* Important: Code tag itself shouldn't have background */
             padding: 0;
             font-size: inherit;
             line-height: inherit;
-            white-space: inherit;
-            color: inherit;
+            white-space: inherit; /* Inherit from pre */
+            color: inherit; /* Inherit text color from pre */
+            /* Reset potential global styles */
+            margin: 0;
+            border-radius: 0;
+            border: none;
+            text-shadow: none; /* Prism themes might add this */
         }
+        /* Ensure Prism highlighting overrides defaults if necessary */
+        .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #6a9955; } /* Example override */
+        .light-theme .token.comment, .light-theme .token.prolog, .light-theme .token.doctype, .light-theme .token.cdata { color: slategray; }
 
         .assistant-message > *:first-child { margin-top: 0; }
         .assistant-message > *:last-child { margin-bottom: 0; }
-        .light-theme .assistant-message { background-color: var(--chat-ai-light); }
 
         /* Formatting styles */
         .assistant-message h1, .assistant-message h2, .assistant-message h3,
@@ -389,9 +394,9 @@
             background-color: rgba(0,0,0,0.2);
             padding: 3px 5px;
             border-radius: 4px;
-            z-index: 1;
+            z-index: 1; /* Ensure controls are above message content */
         }
-         .light-theme .message-controls { background-color: rgba(255,255,255,0.3); }
+         .light-theme .message-controls { background-color: rgba(0,0,0,0.1); }
         .message:hover .message-controls { opacity: 1; }
 
         .control-btn {
@@ -401,12 +406,16 @@
         }
         .light-theme .control-btn { color: #555; }
         .control-btn:hover { opacity: 1; }
+        /* Style for the checkmark feedback */
+        .control-btn .fa-check { color: #4caf50; } /* Green check */
+        .light-theme .control-btn .fa-check { color: #388e3c; }
 
         .input-container {
             padding: 16px;
             border-top: 1px solid var(--border-dark);
             position: relative;
             flex-shrink: 0;
+            transition: border-color 0.3s;
         }
 
         .light-theme .input-container {
@@ -423,7 +432,7 @@
             font-family: inherit;
             font-size: 14px;
             resize: none;
-            transition: border-color 0.2s, height 0.1s ease-out;
+            transition: border-color 0.2s, height 0.1s ease-out, background-color 0.3s, color 0.3s;
             box-sizing: border-box;
             outline: none;
             max-height: 200px;
@@ -437,7 +446,7 @@
             color: var(--text-light);
         }
         .message-input:focus { border-color: var(--primary-color); }
-        .message-input::placeholder { color: var(--placeholder-dark); }
+        .message-input::placeholder { color: var(--placeholder-dark); transition: color 0.3s; }
         .light-theme .message-input::placeholder { color: var(--placeholder-light); }
 
         .send-btn {
@@ -464,13 +473,13 @@
         .settings-panel {
             position: fixed;
             top: 0;
-            right: -350px;
+            right: -350px; /* Start off-screen */
             width: 350px;
             height: 100%;
             background-color: var(--sidebar-dark);
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            transition: right 0.3s ease, background-color 0.3s;
+            transition: right 0.3s ease, background-color 0.3s, box-shadow 0.3s;
             padding: 20px;
             box-sizing: border-box;
             overflow-y: auto;
@@ -479,7 +488,7 @@
         }
         .light-theme .settings-panel {
             background-color: var(--sidebar-light);
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
         }
         .settings-panel.open { right: 0; }
         .settings-header {
@@ -503,7 +512,8 @@
         .light-theme .setting-title { color: var(--text-light); }
 
         /* Input elements inside settings */
-        .setting-group input[type="number"] {
+        .setting-group input[type="number"],
+        .setting-group select { /* Apply consistent styling */
             width: 100%;
             padding: 10px;
             border-radius: 6px;
@@ -515,12 +525,14 @@
             box-sizing: border-box;
             transition: border-color 0.2s, background-color 0.3s, color 0.3s;
         }
-        .light-theme .setting-group input[type="number"] {
+        .light-theme .setting-group input[type="number"],
+        .light-theme .setting-group select {
             background-color: var(--chat-user-light);
             color: var(--text-light);
             border: 1px solid var(--border-light);
         }
-        .setting-group input[type="number"]:focus { border-color: var(--primary-color); }
+        .setting-group input[type="number"]:focus,
+        .setting-group select:focus { border-color: var(--primary-color); }
 
         /* Model Selector Button */
         .select-model-btn {
@@ -536,6 +548,9 @@
             text-align: left;
             cursor: pointer;
             transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+             display: flex; /* Use flex to align text and icon */
+             justify-content: space-between; /* Push icon to the right */
+             align-items: center;
         }
         .light-theme .select-model-btn {
             background-color: var(--chat-user-light);
@@ -546,14 +561,14 @@
         .light-theme .select-model-btn:hover { background-color: var(--hover-light); }
         .select-model-btn:focus { border-color: var(--primary-color); }
         .select-model-btn .model-name {
-            display: inline-block;
-            max-width: calc(100% - 20px); /* Adjust based on icon size if any */
+            /* Removed inline-block, flex handles layout */
+            max-width: calc(100% - 25px); /* Adjust based on icon size + gap */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            vertical-align: middle;
+            /* vertical-align: middle; -- Not needed with flex */
         }
-        .select-model-btn .fas { float: right; opacity: 0.7; margin-top: 2px;}
+        .select-model-btn .fas { /* Removed float */ opacity: 0.7; }
 
 
         /* Toggle Switch */
@@ -613,7 +628,7 @@
             background-color: var(--modal-bg-dark); border-radius: 8px;
             padding: 24px; width: 600px; max-width: 90%;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, box-shadow 0.3s;
             max-height: 80vh; /* Limit modal height */
             display: flex;
             flex-direction: column;
@@ -640,13 +655,20 @@
         .modal-content {
             overflow-y: auto; /* Allow content to scroll */
             flex-grow: 1;
+            /* Custom scrollbar for modal content (optional) */
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
         }
+        .modal-content::-webkit-scrollbar { width: 6px; }
+        .modal-content::-webkit-scrollbar-track { background: transparent; }
+        .modal-content::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 3px; }
+
         .modal-content p { margin: 16px 0; line-height: 1.6; } /* For delete modal */
 
         /* Model Selection Modal Specific Styles */
         #modelModalContent {
-            padding-right: 5px; /* Space for scrollbar if needed */
-            /* Ensure the modal content area itself handles the primary scrolling */
+             /* padding-right: 5px; /* Space for scrollbar if needed - handled by scrollbar styles now */
+             /* Ensure the modal content area itself handles the primary scrolling */
             overflow-y: auto;
             flex-grow: 1; /* Make sure it takes available space */
             padding-bottom: 10px; /* Add some space at the bottom */
@@ -662,13 +684,12 @@
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.2s;
-            /* Add position relative for potential absolute positioned elements inside if needed later */
-            position: relative;
+            position: relative; /* For potential future absolute elements */
         }
         .light-theme .category-header { background-color: var(--chat-user-light); }
         .category-header:hover { background-color: var(--hover-dark); }
         .light-theme .category-header:hover { background-color: var(--hover-light); }
-        .category-header .fas { transition: transform 0.3s ease; }
+        .category-header .fas { transition: transform 0.3s ease; margin-left: 10px; } /* Added margin */
         .category-header.open .fas { transform: rotate(90deg); }
 
         .category-content {
@@ -712,11 +733,52 @@
         .cancel-btn:hover { background-color: var(--hover-dark); }
         .light-theme .cancel-btn:hover { background-color: var(--hover-light); }
         .confirm-btn {
-            background-color: #ff4d4d; color: white; border: none; border-radius: 4px;
+            background-color: var(--error-color); color: white; border: none; border-radius: 4px;
             padding: 8px 16px; cursor: pointer; font-weight: 500;
             transition: background-color 0.2s;
         }
         .confirm-btn:hover { background-color: #e04040; }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--toast-bg-dark);
+            color: var(--toast-text-dark);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, bottom 0.3s, background-color 0.3s, color 0.3s;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast-notification.visible {
+            opacity: 1;
+            visibility: visible;
+            bottom: 30px; /* Animate up slightly */
+        }
+
+        .toast-notification.error {
+            background-color: var(--toast-error-bg);
+            color: white; /* Error text usually white */
+        }
+
+        .light-theme .toast-notification {
+            background-color: var(--toast-bg-light);
+            color: var(--toast-text-light);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .toast-notification.error {
+            background-color: var(--toast-error-bg);
+            color: white;
+        }
+
 
         /* Mobile */
         .mobile-toggle {
@@ -726,19 +788,24 @@
         .light-theme .mobile-toggle { color: var(--text-light); }
 
         @media (max-width: 768px) {
-            .sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
+            .sidebar { position: absolute; height: 100%; transform: translateX(-100%); box-shadow: 2px 0 10px rgba(0,0,0,0.3); }
             .sidebar.open { transform: translateX(0); }
             .main-content { width: 100%; }
             .mobile-toggle { display: block; }
+            /* Dimming overlay for main content when sidebar is open */
             .main-content::after {
                 content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
                 background: rgba(0, 0, 0, 0.5); z-index: 5;
                 opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+                pointer-events: none; /* Allows clicks through when invisible */
             }
-            body.sidebar-open .main-content::after { opacity: 1; visibility: visible; }
+            body.sidebar-open .main-content::after { opacity: 1; visibility: visible; pointer-events: auto; /* Block clicks when visible */ }
+
             .settings-panel { width: 90%; right: -100%; }
             .settings-panel.open { right: 0; }
             .modal { width: 90%; } /* Wider modal on mobile */
+            .message { max-width: 95%; } /* Slightly more width for messages */
+            .toast-notification { width: calc(100% - 40px); /* Make toast wider */ left: 20px; transform: translateX(0); text-align: center;}
         }
 
     </style>
@@ -760,9 +827,9 @@
         </div>
         <div class="sidebar-footer">
             <button class="theme-toggle" id="themeToggle">
-                <i class="fas fa-moon"></i>
+                <i class="fas fa-moon"></i> <!-- Icon updated dynamically -->
             </button>
-            <span>2025.4.2</span>
+            <span>2025.4.3</span>
         </div>
     </div>
 
@@ -813,7 +880,7 @@
                      <i class="fas fa-chevron-down"></i>
                  </button>
                  <!-- Hidden select, might remove later if not needed -->
-                 <select id="modelSelectHidden" style="display: none;"></select>
+                 <!-- <select id="modelSelectHidden" style="display: none;"></select> -->
             </div>
 
             <div class="setting-group">
@@ -850,7 +917,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">Удалить сообщение</h3>
-                <button class="close-modal" id="closeDeleteModal">
+                <button class="close-modal" data-close-modal>
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -858,7 +925,7 @@
                  <p>Вы уверены, что хотите удалить это сообщение? Это действие нельзя отменить.</p>
             </div>
             <div class="modal-actions">
-                <button class="cancel-btn" id="cancelDelete">Отмена</button>
+                <button class="cancel-btn" data-close-modal>Отмена</button>
                 <button class="confirm-btn" id="confirmDelete">Удалить</button>
             </div>
         </div>
@@ -869,7 +936,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">Выберите модель</h3>
-                <button class="close-modal" id="closeModelModal">
+                <button class="close-modal" data-close-modal>
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -877,11 +944,26 @@
                 <!-- Categories and models will be populated here by JS -->
                 <p style="text-align: center; padding: 20px 0;">Загрузка моделей...</p>
             </div>
+             <!-- Optional Footer for Modal -->
+             <!-- <div class="modal-actions">
+                 <button class="cancel-btn" data-close-modal>Закрыть</button>
+             </div> -->
         </div>
     </div>
 
+    <!-- Toast Notification Element -->
+    <div class="toast-notification" id="toastNotification">
+        <span id="toastMessage">Сообщение скопировано</span>
+    </div>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <!-- Optional: Add components manually if autoloader is slow or you know the languages -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-clike.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script> -->
+    <!-- ... add other common languages -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -895,12 +977,10 @@
             const settingsBtn = document.getElementById('settingsBtn');
             const settingsPanel = document.getElementById('settingsPanel');
             const closeSettings = document.getElementById('closeSettings');
-            // Model selection elements
-            const selectModelBtn = document.getElementById('selectModelBtn'); // Button to open modal
+            const selectModelBtn = document.getElementById('selectModelBtn');
             const modelSelectionModal = document.getElementById('modelSelectionModal');
             const modelModalContent = document.getElementById('modelModalContent');
-            const closeModelModal = document.getElementById('closeModelModal');
-            // Other settings elements
+            // const closeModelModal = document.getElementById('closeModelModal'); // Replaced with data attribute
             const maxTokens = document.getElementById('maxTokens');
             const temperature = document.getElementById('temperature');
             const thinkingModeToggle = document.getElementById('thinkingModeToggle');
@@ -908,103 +988,158 @@
             const saveSettingsBtn = document.getElementById('saveSettings');
             const newChatBtn = document.getElementById('newChatBtn');
             const chatList = document.getElementById('chatList');
-            // Delete modal elements
             const deleteModal = document.getElementById('deleteModal');
-            const closeDeleteModal = document.getElementById('closeDeleteModal');
-            const cancelDelete = document.getElementById('cancelDelete');
+            // const closeDeleteModal = document.getElementById('closeDeleteModal'); // Replaced
+            // const cancelDelete = document.getElementById('cancelDelete'); // Replaced
             const confirmDelete = document.getElementById('confirmDelete');
-            // Mobile nav elements
             const mobileToggle = document.getElementById('mobileToggle');
             const sidebar = document.querySelector('.sidebar');
             const mainContent = document.getElementById('mainContent');
             const welcomeContainer = document.getElementById('welcomeContainer'); // Initial reference
+            const prismThemeLink = document.getElementById('prismTheme');
+            const toastNotification = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
 
             // --- Application State ---
             let currentChatId = null;
             let messageToDelete = null;
             let chatHistory = [];
             let chatSettings = {
-                modelKey: "",   // e.g., "GPT 4o"
-                model: "",      // e.g., "gpt-4o"
-                provider: "",   // e.g., "openai-completion"
-                thinkingModel: null, // e.g., "openrouter:anthropic/claude-3.7-sonnet:thinking" or null
+                modelKey: "",
+                model: "",
+                provider: "",
+                thinkingModel: null,
                 thinkingMode: false,
                 maxTokens: 2048,
                 temperature: 1
             };
-            let modelsData = null; // Will hold the structured model data { Provider: { ModelKey: { model, provider?, thinking_model? }, provider: "category-provider" } }
-            let chats = []; // Holds { id, title, history: [], settings: {} }
+            let modelsData = null;
+            let chats = [];
+            let toastTimeout = null; // To manage toast visibility
 
             // --- Utility Functions ---
+
+            /**
+             * Escapes HTML special characters to prevent XSS.
+             * @param {string} unsafe The string to escape.
+             * @returns {string} The escaped string.
+             */
             function escapeHtml(unsafe) {
                 if (typeof unsafe !== 'string') return "";
                 return unsafe
-                    .replace(/&/g, "&") // Must be first
-                    .replace(/</g, "<")
-                    .replace(/>/g, ">")
-                    .replace(/"/g, '"')
-                    .replace(/'/g, "'");
+                    .replace(/&/g, "&amp;") // Must be first
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;"); // Using numeric entity for single quote
             }
 
+            /**
+             * Formats assistant message content, handling Markdown-like syntax for code blocks and headings.
+             * It internally uses escapeHtml to sanitize content before wrapping in HTML tags.
+             * @param {string} content Raw assistant message content.
+             * @returns {string} HTML formatted string, safe for innerHTML.
+             */
             function formatAssistantMessage(content) {
-                // (Keep the existing robust formatting function)
                 let processedContent = content;
                 const codeBlocks = [];
 
+                // 1. Extract and escape code blocks
                 processedContent = processedContent.replace(/^```(\w*)\n([\s\S]*?)\n```$/gm, (match, lang, code) => {
-                    const languageClass = lang ? `language-${escapeHtml(lang.trim())}` : 'language-plaintext';
+                    // Escape the language identifier for the class name
+                    const safeLang = escapeHtml(lang.trim().toLowerCase() || 'plaintext');
+                    const languageClass = `language-${safeLang}`;
+                    // Escape the code content itself thoroughly
                     const escapedCode = escapeHtml(code);
+                    // Build the HTML structure for the code block
                     const blockHtml = `<pre class="${languageClass}"><code class="${languageClass}">${escapedCode}</code></pre>`;
                     const placeholder = `%%CODEBLOCK_${codeBlocks.length}%%`;
                     codeBlocks.push(blockHtml);
                     return placeholder;
                 });
 
+                // 2. Process remaining lines for paragraphs and headings
                 const lines = processedContent.split('\n');
                 let formattedHtml = '';
                 let currentParagraph = '';
 
                 lines.forEach(line => {
+                    // Check for code block placeholders first
                     const placeholderMatch = line.match(/^%%CODEBLOCK_(\d+)%%$/);
                     if (placeholderMatch) {
+                        // If we were building a paragraph, close it first
                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                         }
                         const index = parseInt(placeholderMatch[1], 10);
                         if (index >= 0 && index < codeBlocks.length) {
-                            formattedHtml += codeBlocks[index] + '\n';
+                            formattedHtml += codeBlocks[index] + '\n'; // Add the pre-formatted code block
                         } else {
-                             formattedHtml += escapeHtml(line) + '\n'; // Escape if placeholder invalid
+                             // Should not happen, but escape if placeholder is invalid
+                             formattedHtml += `<p>${escapeHtml(line)}</p>\n`;
                         }
-                        return;
+                        return; // Move to next line
                     }
 
+                    // Check for headings
                     const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
                     if (headingMatch) {
+                        // Close any open paragraph
                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                         }
                         const level = headingMatch[1].length;
+                        // Escape the heading text content
                         const text = escapeHtml(headingMatch[2].trim());
                         formattedHtml += `<h${level}>${text}</h${level}>\n`;
-                    } else if (line.trim() === '' && currentParagraph) {
-                         formattedHtml += `<p>${currentParagraph}</p>\n`;
-                         currentParagraph = '';
-                    } else if (line.trim() !== '') {
+                    }
+                    // Handle empty lines (paragraph breaks)
+                    else if (line.trim() === '') {
+                         if (currentParagraph) {
+                            formattedHtml += `<p>${currentParagraph}</p>\n`;
+                            currentParagraph = '';
+                         }
+                    }
+                    // Handle regular text lines
+                    else if (line.trim() !== '') {
                         // Escape line content before adding
                         const escapedLine = escapeHtml(line);
-                        // Add <br> between lines within the same paragraph
+                        // Add <br> for line breaks within the same paragraph, otherwise start new paragraph content
                         currentParagraph += (currentParagraph ? '<br>' : '') + escapedLine;
                     }
                 });
 
+                // Close any remaining open paragraph
                 if (currentParagraph) {
                     formattedHtml += `<p>${currentParagraph}</p>\n`;
                 }
 
                 return formattedHtml.trim();
+            }
+
+             /**
+             * Shows a toast notification.
+             * @param {string} message The message to display.
+             * @param {boolean} [isError=false] If true, display as an error toast.
+             * @param {number} [duration=2500] Duration in milliseconds.
+             */
+            function showToast(message, isError = false, duration = 2500) {
+                if (toastTimeout) {
+                    clearTimeout(toastTimeout); // Clear previous timeout if any
+                }
+                toastMessage.textContent = message;
+                toastNotification.classList.toggle('error', isError); // Add/remove error class
+
+                // Make visible
+                toastNotification.classList.add('visible');
+
+                // Set timeout to hide
+                toastTimeout = setTimeout(() => {
+                    toastNotification.classList.remove('visible');
+                    toastTimeout = null; // Clear the timeout reference
+                }, duration);
             }
 
             // --- Initialization ---
@@ -1025,135 +1160,66 @@
 
             // Model Selection Modal listeners
             selectModelBtn.addEventListener('click', openModelSelectionModal);
-            closeModelModal.addEventListener('click', () => toggleModal(modelSelectionModal, false));
-            modelSelectionModal.addEventListener('click', (event) => { // Close on overlay click
-                if (event.target === modelSelectionModal) {
+            // Close modal via button or overlay click
+            modelSelectionModal.addEventListener('click', (event) => {
+                if (event.target === modelSelectionModal || event.target.closest('[data-close-modal]')) {
                     toggleModal(modelSelectionModal, false);
                 }
             });
 
             // Delete Modal listeners
-            deleteModal.addEventListener('click', (event) => { // Close on overlay click
-                if (event.target === deleteModal) {
+            deleteModal.addEventListener('click', (event) => {
+                if (event.target === deleteModal || event.target.closest('[data-close-modal]')) {
                     toggleModal(deleteModal, false);
-                    messageToDelete = null; // Clear message ID if closed via overlay
+                    messageToDelete = null;
                 }
-            });
-            closeDeleteModal.addEventListener('click', () => {
-                toggleModal(deleteModal, false);
-                messageToDelete = null;
-            });
-            cancelDelete.addEventListener('click', () => {
-                toggleModal(deleteModal, false);
-                messageToDelete = null;
             });
             confirmDelete.addEventListener('click', deleteMessageHandler);
 
             // Mobile navigation
             mobileToggle.addEventListener('click', toggleSidebar);
             mainContent.addEventListener('click', (event) => {
-                // Close sidebar if clicking on the dimmed overlay area
+                 // Close sidebar if clicking on the dimmed overlay area
                  if (body.classList.contains('sidebar-open') && event.target === mainContent) {
                      toggleSidebar();
                  }
-                 // Close settings panel if clicking outside
-                 if (settingsPanel.classList.contains('open') &&
-                     !settingsPanel.contains(event.target) &&
-                     !settingsBtn.contains(event.target) &&
-                     event.target !== selectModelBtn && // Don't close if clicking model button
-                     !selectModelBtn.contains(event.target)) { // Check contains for icon inside button
+                 // Close settings panel if clicking outside (simplified check)
+                  if (settingsPanel.classList.contains('open') && !settingsBtn.contains(event.target) && !settingsPanel.contains(event.target) ) {
                      closeSettingsPanel();
                  }
             });
 
 
             // --- Core Functions ---
-            function copyMessageContent(messageId) {
-    const message = chatHistory.find(msg => msg.id === messageId);
-    if (message && message.content) {
-        navigator.clipboard.writeText(message.content)
-            .then(() => {
-                console.log("Original message copied:", messageId);
-                // Визуальная обратная связь (иконка галочки)
-                const copyBtn = document.querySelector(`.message[data-id="${messageId}"] .copy-btn i`);
-                if(copyBtn) {
-                    copyBtn.classList.remove('fa-copy');
-                    copyBtn.classList.add('fa-check');
-                    setTimeout(() => {
-                        copyBtn.classList.remove('fa-check');
-                        copyBtn.classList.add('fa-copy');
-                    }, 1500);
-                }
-                
-                // Показать всплывающее уведомление
-                showToast("Сообщение скопировано");
-            })
-            .catch(err => {
-                console.error("Failed to copy message:", err);
-                showToast("Не удалось скопировать текст", true);
-            });
-    } else {
-        console.warn("Could not find message in history to copy:", messageId);
-        showToast("Сообщение не найдено", true);
-    }
-}
 
-// Добавьте эту новую функцию
-            function showToast(message, isError = false) {
-                const toast = document.getElementById('toastNotification');
-                const toastMessage = document.getElementById('toastMessage');
-                
-                // Установить сообщение и стиль ошибки при необходимости
-                toastMessage.textContent = message;
-                if (isError) {
-                    toast.style.backgroundColor = '#ff4d4d';
-                } else {
-                    toast.style.backgroundColor = '';
-                }
-                
-                // Показать уведомление
-                toast.classList.add('visible');
-                
-                // Скрыть через задержку
-                setTimeout(() => {
-                    toast.classList.remove('visible');
-                }, 2000);
-            }
             function loadTheme() {
                 const savedTheme = localStorage.getItem('theme');
-                if (savedTheme === 'light') {
-                    body.classList.add('light-theme');
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                } else {
-                    body.classList.remove('light-theme');
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                }
-                 // Apply theme to Prism CSS link if necessary (some themes might need switching)
-                 const prismLink = document.querySelector('link[href*="prism"]');
-                 if (prismLink) {
-                     const themeName = body.classList.contains('light-theme') ? 'prism' : 'prism-okaidia'; // Example themes
-                     // prismLink.href = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/${themeName}.min.css`;
-                     // Simpler: Use CSS variables as done now.
-                 }
+                const isLight = savedTheme === 'light';
+
+                body.classList.toggle('light-theme', isLight);
+                themeToggle.innerHTML = isLight ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+
+                // Update Prism CSS theme
+                // const prismTheme = isLight ? 'prism' : 'prism-okaidia';
+                // prismThemeLink.href = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/${prismTheme}.min.css`;
+                // Using CSS variables is preferred now, so link change might not be needed if CSS vars cover code themes.
+                // We'll keep the CSS variables approach.
             }
 
             function toggleTheme() {
                 body.classList.toggle('light-theme');
                 const isLight = body.classList.contains('light-theme');
-                themeToggle.innerHTML = isLight ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
                 localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                // Re-apply theme to Prism link if needed
-                loadTheme();
+                loadTheme(); // Reload to apply all changes
             }
 
             function fetchModelsAndSetup() {
-                fetch("/models") // Assuming this endpoint returns the JSON array structure provided
+                fetch("/models") // Assuming this endpoint returns the JSON array structure
                     .then(response => {
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         return response.json();
                     })
                     .then(data => {
-                         // Expecting data to be an array with one object inside
                          if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') {
                              console.error("Invalid models data format received:", data);
                              throw new Error("Invalid models data format.");
@@ -1161,108 +1227,98 @@
                          modelsData = data[0]; // Store the main object
                          console.log("Models loaded:", modelsData);
 
-                         // Populate the new modal
                          populateModelSelectionModal();
 
-                         // Set default model based on the first available one
-                         const firstProviderKey = Object.keys(modelsData)[0];
-                         if (firstProviderKey) {
-                             const providerModels = modelsData[firstProviderKey];
-                             const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider'); // Find first model key
-                             if (firstModelKey) {
-                                 const modelInfo = providerModels[firstModelKey];
-                                 const categoryProvider = providerModels.provider;
-                                 const actualProvider = modelInfo.provider || categoryProvider; // Inheritance
+                         // Set default model if not already set (e.g., on first load)
+                         if (!chatSettings.model) {
+                             const firstProviderKey = Object.keys(modelsData)[0];
+                             if (firstProviderKey) {
+                                 const providerModels = modelsData[firstProviderKey];
+                                 const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider');
+                                 if (firstModelKey) {
+                                     const modelInfo = providerModels[firstModelKey];
+                                     const categoryProvider = providerModels.provider;
+                                     const actualProvider = modelInfo.provider || categoryProvider;
 
-                                 // Set initial chatSettings
-                                 chatSettings.modelKey = firstModelKey;
-                                 chatSettings.model = modelInfo.model;
-                                 chatSettings.provider = actualProvider;
-                                 chatSettings.thinkingModel = modelInfo.thinking_model || null; // Store thinking model separate
-                                 chatSettings.thinkingMode = false; // Default off
-
-                                 updateSettingsUI(); // Update settings panel display
-                             } else {
-                                 console.warn("No models found within the first provider:", firstProviderKey);
-                                 selectModelBtn.querySelector('.model-name').textContent = "Нет моделей";
-                                 selectModelBtn.disabled = true;
+                                     chatSettings.modelKey = firstModelKey;
+                                     chatSettings.model = modelInfo.model;
+                                     chatSettings.provider = actualProvider;
+                                     chatSettings.thinkingModel = modelInfo.thinking_model || null;
+                                     chatSettings.thinkingMode = false;
+                                     // Keep default tokens/temp unless loaded from chat later
+                                 }
                              }
-                         } else {
-                             console.warn("No providers found in models data.");
-                             selectModelBtn.querySelector('.model-name').textContent = "Нет провайдеров";
-                             selectModelBtn.disabled = true;
                          }
+                         // Update UI *after* potentially setting defaults
+                         updateSettingsUI();
 
-                         loadChats(); // Load chats after models are ready
+                         // Load chats *after* models and default settings are ready
+                         loadChats();
                     })
                     .catch(error => {
                         console.error("Ошибка при загрузке моделей:", error);
                         selectModelBtn.querySelector('.model-name').textContent = "Ошибка загрузки";
                         selectModelBtn.disabled = true;
-                        modelModalContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px 0;">${escapeHtml(error.message)}</p>`;
-                        chatList.innerHTML = '<div class="chat-item" style="color: #ff4d4d;"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки</div>';
+                        modelModalContent.innerHTML = `<p style="text-align: center; color: var(--error-color); padding: 20px 0;">${escapeHtml(error.message)}</p>`;
+                        chatList.innerHTML = `<div class="chat-item" style="color: var(--error-color);"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки чатов</div>`;
+                        // Still allow creating new chat, but with no models
+                        createNewChat(); // Show new chat screen even if models failed
+                        updateSettingsUI(); // Reflect the error state in settings button
                     });
             }
 
             function populateModelSelectionModal() {
                  if (!modelsData) {
-                     modelModalContent.innerHTML = '<p style="text-align: center; color: red;">Данные моделей не загружены.</p>';
+                     modelModalContent.innerHTML = '<p style="text-align: center; color: var(--error-color);">Данные моделей не загружены.</p>';
                      return;
                  }
                  modelModalContent.innerHTML = ''; // Clear loading message
 
                  Object.keys(modelsData).forEach(providerKey => {
                      const providerInfo = modelsData[providerKey];
+                     if (typeof providerInfo !== 'object' || providerInfo === null) return; // Skip invalid entries
                      const categoryProvider = providerInfo.provider; // Provider for the whole category
 
-                     // Create category container
                      const categoryDiv = document.createElement('div');
                      categoryDiv.className = 'model-category';
 
-                     // Create category header
                      const headerDiv = document.createElement('div');
                      headerDiv.className = 'category-header';
+                     // Use textContent for safety, then add icon HTML
                      headerDiv.textContent = providerKey; // e.g., "OpenAI"
-                     headerDiv.innerHTML = `${escapeHtml(providerKey)} <i class="fas fa-chevron-right"></i>`; // Add chevron
+                     headerDiv.insertAdjacentHTML('beforeend', ' <i class="fas fa-chevron-right"></i>');
                      headerDiv.setAttribute('aria-expanded', 'false');
 
-                     // Create content div (for models)
                      const contentDiv = document.createElement('div');
                      contentDiv.className = 'category-content';
 
-                     // Add models to content div
                      Object.keys(providerInfo).forEach(modelKey => {
                          if (modelKey === 'provider') return; // Skip the category provider key
-
                          const modelDetails = providerInfo[modelKey];
-                         const actualProvider = modelDetails.provider || categoryProvider; // Inheritance logic
+                         if (typeof modelDetails !== 'object' || modelDetails === null) return; // Skip invalid model entries
+
+                         const actualProvider = modelDetails.provider || categoryProvider;
                          const thinkingModel = modelDetails.thinking_model || null;
 
                          const modelItem = document.createElement('div');
                          modelItem.className = 'model-item';
-                         modelItem.textContent = modelKey; // e.g., "GPT 4o"
+                         modelItem.textContent = modelKey; // Display name, e.g., "GPT 4o"
                          modelItem.dataset.modelKey = modelKey;
-                         modelItem.dataset.model = modelDetails.model;
+                         modelItem.dataset.model = modelDetails.model; // Actual model ID, e.g., "gpt-4o"
                          modelItem.dataset.provider = actualProvider;
                          if (thinkingModel) {
                              modelItem.dataset.thinkingModel = thinkingModel;
                          }
 
-                         // Add click listener for selection
                          modelItem.addEventListener('click', () => {
-                             // Update chat settings
                              chatSettings.modelKey = modelKey;
                              chatSettings.model = modelDetails.model;
                              chatSettings.provider = actualProvider;
-                             chatSettings.thinkingModel = thinkingModel; // Update potential thinking model
+                             chatSettings.thinkingModel = thinkingModel;
 
-                             // Update UI
-                             updateSettingsUI(); // Updates button text & thinking mode state
-                             toggleModal(modelSelectionModal, false); // Close modal
-
-                             // Highlight the selected item in the modal (for next time it opens)
-                             document.querySelectorAll('#modelModalContent .model-item.active').forEach(el => el.classList.remove('active'));
-                             modelItem.classList.add('active');
+                             updateSettingsUI();
+                             toggleModal(modelSelectionModal, false);
+                             updateModelSelectionActiveState(); // Update highlighting within the modal
 
                              // Reset thinking mode if the new model doesn't support it
                              updateThinkingModeAvailability();
@@ -1270,23 +1326,22 @@
                                  chatSettings.thinkingMode = false;
                                  thinkingModeToggle.checked = false;
                              }
+                             // Save the updated settings to the current chat immediately
+                             saveCurrentChatState();
                          });
-
                          contentDiv.appendChild(modelItem);
                      });
 
-                     // Add toggle functionality to header
-                     headerDiv.addEventListener('click', () => {
-                         const isOpen = contentDiv.classList.toggle('open');
-                         headerDiv.classList.toggle('open', isOpen);
-                         headerDiv.setAttribute('aria-expanded', isOpen);
-                     });
-
-                     // Append header and content to the category div
-                     categoryDiv.appendChild(headerDiv);
-                     categoryDiv.appendChild(contentDiv);
-                     // Append category div to the main modal content
-                     modelModalContent.appendChild(categoryDiv);
+                     if (contentDiv.children.length > 0) { // Only add category if it has models
+                         headerDiv.addEventListener('click', () => {
+                             const isOpen = contentDiv.classList.toggle('open');
+                             headerDiv.classList.toggle('open', isOpen);
+                             headerDiv.setAttribute('aria-expanded', isOpen);
+                         });
+                         categoryDiv.appendChild(headerDiv);
+                         categoryDiv.appendChild(contentDiv);
+                         modelModalContent.appendChild(categoryDiv);
+                     }
                  });
 
                  // After populating, update the active state based on current settings
@@ -1294,46 +1349,48 @@
             }
 
              function updateModelSelectionActiveState() {
-                 // Remove existing active class
-                 document.querySelectorAll('#modelModalContent .model-item.active').forEach(el => el.classList.remove('active'));
+                 modelModalContent.querySelectorAll('.model-item.active').forEach(el => el.classList.remove('active'));
                  // Find and add active class to the current model
                  const currentModelItem = modelModalContent.querySelector(`.model-item[data-model-key="${chatSettings.modelKey}"]`);
                  if (currentModelItem) {
                      currentModelItem.classList.add('active');
-                     // Optionally expand the category of the active item
                      const categoryContent = currentModelItem.closest('.category-content');
                      const categoryHeader = categoryContent?.previousElementSibling;
                      if (categoryContent && categoryHeader && !categoryContent.classList.contains('open')) {
-                         categoryContent.classList.add('open');
-                         categoryHeader.classList.add('open');
-                         categoryHeader.setAttribute('aria-expanded', 'true');
+                         // Optional: Auto-expand the category of the selected item
+                         // categoryContent.classList.add('open');
+                         // categoryHeader.classList.add('open');
+                         // categoryHeader.setAttribute('aria-expanded', 'true');
                      }
                  }
              }
 
             function openModelSelectionModal() {
-                updateModelSelectionActiveState(); // Ensure correct item is highlighted
-                toggleModal(modelSelectionModal, true);
+                if (modelsData) { // Only open if models are loaded
+                    updateModelSelectionActiveState();
+                    toggleModal(modelSelectionModal, true);
+                } else {
+                    showToast("Модели еще не загружены.", true);
+                }
             }
 
             function updateSettingsUI() {
-                // Update the model selection button text
                 const modelNameSpan = selectModelBtn.querySelector('.model-name');
-                 if (chatSettings.modelKey) {
+                if (chatSettings.modelKey) {
                     modelNameSpan.textContent = chatSettings.modelKey;
                     selectModelBtn.disabled = false;
-                 } else if (!modelsData) {
-                     modelNameSpan.textContent = "Ошибка загрузки";
-                     selectModelBtn.disabled = true;
-                 } else {
-                     modelNameSpan.textContent = "Выберите модель";
-                     selectModelBtn.disabled = false;
-                 }
+                } else if (!modelsData) {
+                    modelNameSpan.textContent = "Ошибка загрузки";
+                    selectModelBtn.disabled = true;
+                } else {
+                    modelNameSpan.textContent = "Выберите модель";
+                    selectModelBtn.disabled = false; // Allow selection even if none chosen yet
+                }
 
                 maxTokens.value = chatSettings.maxTokens;
                 temperature.value = chatSettings.temperature;
                 thinkingModeToggle.checked = chatSettings.thinkingMode;
-                updateThinkingModeAvailability(); // Update enabled/disabled state of toggle
+                updateThinkingModeAvailability(); // Handles disabled state and forcing 'false' if unsupported
             }
 
             function handleInput() {
@@ -1351,44 +1408,61 @@
             }
 
             function autoResizeTextarea() {
-                messageInput.style.height = 'auto';
-                const newHeight = Math.min(messageInput.scrollHeight, parseInt(window.getComputedStyle(messageInput).maxHeight));
+                messageInput.style.height = 'auto'; // Reset height
+                // Calculate scroll height and apply min/max
+                const maxHeight = parseInt(window.getComputedStyle(messageInput).maxHeight) || 200;
+                const requiredHeight = messageInput.scrollHeight;
+                const newHeight = Math.min(requiredHeight, maxHeight);
                 messageInput.style.height = newHeight + 'px';
+
+                // Adjust send button position slightly based on textarea height (optional)
+                const inputContainerPaddingBottom = 16; // Match input-container padding
+                const lineHeight = parseFloat(window.getComputedStyle(messageInput).lineHeight);
+                const rows = Math.max(1, Math.round(newHeight / lineHeight));
+                 // Adjust based on visual preference, this is a basic example
+                const bottomOffset = inputContainerPaddingBottom + (newHeight - lineHeight) / 2 - 2;
+                // sendBtn.style.bottom = `${Math.max(26, bottomOffset)}px`; // Ensure minimum offset
+                 sendBtn.style.bottom = `26px`; // Keep fixed for simplicity now
             }
+
 
             function toggleSidebar() {
                 sidebar.classList.toggle('open');
                 body.classList.toggle('sidebar-open', sidebar.classList.contains('open'));
+                // Ensure main content overlay reacts correctly
+                mainContent.classList.toggle('overlay-active', sidebar.classList.contains('open'));
             }
 
             function sendMessage() {
                 const messageContent = messageInput.value.trim();
-                if (!messageContent || !modelsData || !chatSettings.model) {
-                    console.error("Cannot send message: Content missing, models not loaded, or no model selected.");
+                if (!messageContent) return; // Already disabled, but extra check
+                if (!modelsData || !chatSettings.model) {
+                    console.error("Cannot send message: Models not loaded or no model selected.");
                     addMessageToDOM('assistant', "Ошибка: Невозможно отправить сообщение. Проверьте настройки модели.", Date.now() + "-error", true);
                     return;
                 }
 
-                const userMessage = { role: 'user', content: messageContent, id: Date.now() + "-user" };
-                addMessageToDOM('user', messageContent, userMessage.id);
-                chatHistory.push(userMessage); // Add user message to history
+                const userMessageId = Date.now() + "-user";
+                const userMessage = { role: 'user', content: messageContent, id: userMessageId };
+                addMessageToDOM('user', messageContent, userMessageId); // Add user message to DOM using textContent/escapeHtml
+                chatHistory.push(userMessage);
 
+                // Clear input and disable button
                 messageInput.value = '';
-                autoResizeTextarea();
+                autoResizeTextarea(); // Reset height
                 sendBtn.disabled = true;
+                messageInput.focus(); // Keep focus on input
 
-                // If this is the first message, create the chat entry AFTER user message is in history
+                // Create chat entry if it's the first message
+                let isNewChat = false;
                 if (currentChatId === null) {
-                    createNewChatEntry(messageContent); // Creates chat, sets currentChatId, saves (uses current chatHistory)
-                } else {
-                     // Otherwise, just update the existing chat's history with the user message *before* sending
-                     // NO - we save the *full* history including the assistant response *after* the fetch succeeds using saveCurrentChatState
-                     // REMOVED THE INCORRECT PRE-SAVE LOGIC HERE
+                    createNewChatEntry(messageContent); // Creates chat, sets currentChatId, saves
+                    isNewChat = true;
                 }
 
                 const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
 
-                // Determine model/provider
+                // Determine model/provider for the request
                 let effectiveModelId = chatSettings.model;
                 let effectiveProvider = chatSettings.provider;
                 if (chatSettings.thinkingMode && chatSettings.thinkingModel) {
@@ -1399,11 +1473,11 @@
                 }
 
                 const loadingMsgId = Date.now() + "-loading";
-                addMessageToDOM('assistant', '<div class="loader"></div> Генерируем ответ...', loadingMsgId, false, true);
+                addMessageToDOM('assistant', '<div class="loader"></div> Генерируем ответ...', loadingMsgId, false, true); // Add loading indicator
 
                 fetch('/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
                         messages: messagesPayload,
                         provider: effectiveProvider,
@@ -1412,102 +1486,123 @@
                         temperature: chatSettings.temperature
                     })
                 })
-                .then(response => { // First .then: Check response status and prepare for JSON parsing
+                .then(response => {
                     if (!response.ok) {
                         // Try to parse error details from JSON body first
                         return response.json()
+                            .catch(() => { // If JSON parsing fails (e.g., HTML error page)
+                                throw new Error(`HTTP error ${response.status} - ${response.statusText}`);
+                            })
                             .then(errData => { // If JSON body exists with error info
                                 const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
                                 throw new Error(errorMessage); // Throw a descriptive error
-                            })
-                            .catch(() => { // If parsing error body fails (e.g., HTML error page)
-                                throw new Error(`HTTP error ${response.status}`); // Throw basic HTTP status error
                             });
                     }
-                    // If response IS ok, return the promise for parsing the JSON body
                     return response.json();
                 })
-                .then(data => { // Second .then: Process the successfully parsed JSON data
-                    removeMessageFromDOM(loadingMsgId); // Remove loader now
-                    console.log("Received data:", data); // Log the data for debugging
+                .then(data => {
+                    removeMessageFromDOM(loadingMsgId); // Remove loader
 
-                    if (!data) { // Explicitly check if data is falsy (e.g., server returned null)
-                        console.error("API returned OK but data is falsy:", data);
-                        throw new Error("Сервер вернул пустой или неопределенный ответ.");
-                    }
-
-                    if (data.response) {
-                        const assistantMessage = { role: 'assistant', content: data.response, id: Date.now() + "-assistant" };
-                        addMessageToDOM('assistant', data.response, assistantMessage.id); // Add to DOM
-                        chatHistory.push(assistantMessage); // Add to history *after* DOM
-                        updateLastMessageControls(); // Update controls for the new message
-                        saveCurrentChatState(); // Save the complete state *after* everything is updated
-                    } else if (data.error || data.detail) {
-                         const errorMsg = data.error || data.detail;
-                         console.error("API Error:", errorMsg);
-                         addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
-                         updateLastMessageControls(); // Ensure controls are updated even after API error message
+                    if (data && data.response) {
+                        const assistantMessageId = Date.now() + "-assistant";
+                        const assistantMessage = { role: 'assistant', content: data.response, id: assistantMessageId };
+                        addMessageToDOM('assistant', data.response, assistantMessageId); // Add formatted AI response
+                        chatHistory.push(assistantMessage);
+                        saveCurrentChatState(); // Save the full state *after* getting response
                     } else {
-                         console.error("Unknown API response structure:", data);
-                         addMessageToDOM('assistant', `Неожиданный ответ от сервера.`, Date.now() + "-unknownerror", true);
-                         updateLastMessageControls(); // Ensure controls are updated after unknown error message
+                         // Handle cases where response is ok but data is missing or has API error
+                         const errorMsg = data?.error || data?.detail || "Ответ от API не содержит ожидаемых данных.";
+                         console.error("API Error or Unexpected Response:", errorMsg, data);
+                         addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
+                         // Don't save state if AI response failed? Or save with the error? Let's not save error.
+                         // Revert history if it was a new chat? Too complex. Just show error.
                     }
                 })
-                .catch(error => { // Catch errors from fetch, network, response.ok check, JSON parsing, or thrown in .then blocks
-                    console.error("Ошибка при отправке сообщения:", error);
+                .catch(error => {
+                    console.error("Ошибка при отправке/обработке сообщения:", error);
                     removeMessageFromDOM(loadingMsgId); // Ensure loader is removed on any error
 
-                    // Safely get the error message, whether it's an Error object or something else
                     const displayError = error instanceof Error ? error.message : String(error);
                     addMessageToDOM('assistant', `Ошибка сети или сервера: ${escapeHtml(displayError)}`, Date.now() + "-fetcherror", true);
-                    updateLastMessageControls(); // Ensure controls are updated after displaying the fetch/network error message
+                    // Don't save state on fetch errors
+                })
+                .finally(() => {
+                    // Re-enable input/button in case of error? Or leave disabled?
+                    // sendBtn.disabled = messageInput.value.trim() === ''; // Re-evaluate based on input
+                    updateLastMessageControls(); // Ensure controls are updated after response or error
                 });
             }
 
 
-            function addMessageToDOM(role, rawContent, id = Date.now(), isError = false, isTemp = false) {
-                const welcome = document.getElementById('welcomeContainer');
-                if (welcome) welcome.remove();
+             /**
+              * Adds a message to the chat container in the DOM.
+              * Handles escaping for user messages and errors.
+              * Uses formatAssistantMessage for AI responses.
+              * @param {'user' | 'assistant'} role The role of the sender.
+              * @param {string} rawContent The raw message content.
+              * @param {string | number} id Unique ID for the message element.
+              * @param {boolean} [isError=false] If true, style as an error.
+              * @param {boolean} [isTemp=false] If true, treat as temporary (like loading).
+              */
+             function addMessageToDOM(role, rawContent, id, isError = false, isTemp = false) {
+                 const welcome = document.getElementById('welcomeContainer');
+                 if (welcome) welcome.style.display = 'none'; // Hide welcome message
 
-                const messageDiv = document.createElement('div');
-                messageDiv.dataset.id = id;
-                messageDiv.className = `message ${role}-message`;
-                if (isError) messageDiv.style.color = '#ff4d4d'; // Consider a class instead
-
-                let displayContent = '';
-                 if (role === 'assistant' && !isTemp && !isError) {
-                    displayContent = formatAssistantMessage(rawContent);
-                 } else if (isTemp) {
-                    displayContent = rawContent; // Keep HTML for loader
-                 } else {
-                     displayContent = escapeHtml(rawContent); // Escape user messages and errors
+                 const messageDiv = document.createElement('div');
+                 messageDiv.dataset.id = String(id); // Ensure ID is string
+                 messageDiv.classList.add('message', `${role}-message`);
+                 if (isError) {
+                    messageDiv.classList.add('error-message');
                  }
 
-                messageDiv.innerHTML = displayContent;
+                 // --- Security Implementation ---
+                 if (role === 'user' || isError) {
+                     // USER MESSAGES & ERRORS: Use textContent for maximum safety.
+                     // All content will be displayed as plain text, no HTML interpretation.
+                     messageDiv.textContent = rawContent;
+                 } else if (role === 'assistant' && isTemp) {
+                     // TEMPORARY ASSISTANT MESSAGES (e.g., loader):
+                     // Assume rawContent is safe HTML controlled by us. Use innerHTML.
+                     messageDiv.innerHTML = rawContent;
+                 } else if (role === 'assistant' && !isTemp) {
+                     // REGULAR ASSISTANT MESSAGES:
+                     // Format and sanitize using the dedicated function.
+                     const safeFormattedHtml = formatAssistantMessage(rawContent);
+                     messageDiv.innerHTML = safeFormattedHtml;
 
-                 // Trigger Prism Highlighting only for non-temp, non-error assistant messages
-                 if (role === 'assistant' && !isTemp && !isError) {
-                     messageDiv.querySelectorAll('pre[class*="language-"] code[class*="language-"]').forEach((block) => {
-                         Prism.highlightElement(block.parentElement); // Highlight the <pre> or <code>? Test which works better. Often highlightElement(block) is enough if structure is code > pre. If it's pre > code, highlight pre. Let's try pre.
-                         // Prism.highlightElement(block); // Original attempt
-                     });
+                     // Apply syntax highlighting after content is set
+                     try {
+                         messageDiv.querySelectorAll('pre code[class*="language-"]').forEach((block) => {
+                             Prism.highlightElement(block);
+                         });
+                     } catch (highlightError) {
+                         console.warn("Prism highlighting failed:", highlightError);
+                         // Continue execution even if highlighting fails
+                     }
                  }
+                 // -----------------------------
 
-                 // Add controls only for non-temporary messages
-                 if (!isTemp) {
+                 // Add controls only for non-temporary messages that are part of history
+                 if (!isTemp && chatHistory.some(msg => msg.id === id)) {
                      const controlsDiv = createMessageControls(id, role);
                      messageDiv.appendChild(controlsDiv);
                  }
 
-                chatContainer.appendChild(messageDiv);
-                // Scroll to bottom smoothly
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-            }
+                 chatContainer.appendChild(messageDiv);
+                 // Scroll to bottom smoothly after a tiny delay to allow rendering
+                 setTimeout(() => {
+                     chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                 }, 50); // Small delay
+             }
 
             function removeMessageFromDOM(messageId) {
                  const messageElement = chatContainer.querySelector(`.message[data-id="${messageId}"]`);
                  if (messageElement) {
                      messageElement.remove();
+                 }
+                 // If chat becomes empty after removal, show welcome message
+                 if (chatContainer.children.length === 0 || (chatContainer.children.length === 1 && chatContainer.firstElementChild.id === 'welcomeContainer')) {
+                     displayWelcomeMessage();
                  }
             }
 
@@ -1515,51 +1610,63 @@
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'message-controls';
 
-                // Copy Button (Always add)
-                 const copyBtn = document.createElement('button');
-                 copyBtn.className = 'control-btn copy-btn';
-                 copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-                 copyBtn.title = 'Копировать';
-                 copyBtn.addEventListener('click', () => copyMessageContent(messageId));
-                 controlsDiv.appendChild(copyBtn);
+                // Copy Button
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'control-btn copy-btn';
+                copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                copyBtn.title = 'Копировать';
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent triggering message hover state change? Maybe not needed.
+                    copyMessageContent(messageId, copyBtn); // Pass button for feedback
+                });
+                controlsDiv.appendChild(copyBtn);
 
-                 // Regenerate Button (REMOVED FROM HERE - will be added by updateLastMessageControls)
-                 // We no longer check isLastAssistant here.
+                // Regenerate Button (Added dynamically by updateLastMessageControls)
 
-                // Delete Button (Always add)
+                // Delete Button
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'control-btn delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteBtn.title = 'Удалить';
-                deleteBtn.addEventListener('click', () => confirmDeleteHandler(messageId));
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmDeleteHandler(messageId);
+                });
                 controlsDiv.appendChild(deleteBtn);
 
                 return controlsDiv;
             }
 
-             function copyMessageContent(messageId) {
-                 const message = chatHistory.find(msg => msg.id === messageId);
-                 if (message && message.content) {
+             /**
+              * Copies message content to clipboard and provides feedback.
+              * @param {string | number} messageId
+              * @param {HTMLElement} copyBtnElement The button element for visual feedback.
+              */
+             function copyMessageContent(messageId, copyBtnElement) {
+                 const message = chatHistory.find(msg => String(msg.id) === String(messageId)); // Compare as strings
+                 if (message?.content) {
                      navigator.clipboard.writeText(message.content)
                          .then(() => {
-                             console.log("Original message copied:", messageId);
-                             // Optional: Visual feedback (e.g., temporary checkmark)
-                             const copyBtn = document.querySelector(`.message[data-id="${messageId}"] .copy-btn i`);
-                             if(copyBtn) {
-                                 copyBtn.classList.remove('fa-copy');
-                                 copyBtn.classList.add('fa-check');
+                             console.log("Message copied:", messageId);
+                             showToast("Сообщение скопировано");
+                             // Visual feedback on the button
+                             const icon = copyBtnElement.querySelector('i');
+                             if (icon) {
+                                 icon.classList.remove('fa-copy');
+                                 icon.classList.add('fa-check');
                                  setTimeout(() => {
-                                     copyBtn.classList.remove('fa-check');
-                                     copyBtn.classList.add('fa-copy');
+                                     icon.classList.remove('fa-check');
+                                     icon.classList.add('fa-copy');
                                  }, 1500);
                              }
                          })
                          .catch(err => {
                              console.error("Failed to copy message:", err);
-                             alert("Не удалось скопировать текст.");
+                             showToast("Не удалось скопировать текст", true);
                          });
                  } else {
                       console.warn("Could not find message in history to copy:", messageId);
+                      showToast("Сообщение не найдено в истории", true);
                  }
              }
 
@@ -1570,72 +1677,80 @@
 
             function deleteMessageHandler() {
                 if (messageToDelete === null) return;
+                const messageIdStr = String(messageToDelete); // Ensure string comparison
 
-                const indexToDelete = chatHistory.findIndex(msg => msg.id === messageToDelete);
+                const indexToDelete = chatHistory.findIndex(msg => String(msg.id) === messageIdStr);
 
                 if (indexToDelete !== -1) {
-                     chatHistory.splice(indexToDelete, 1); // Remove from history first
-                     removeMessageFromDOM(messageToDelete); // Then remove from DOM
+                     chatHistory.splice(indexToDelete, 1); // Remove from history
+                     removeMessageFromDOM(messageIdStr); // Remove from DOM
 
                      saveCurrentChatState(); // Save after deletion
-                     console.log(`Message ${messageToDelete} deleted.`);
+                     console.log(`Message ${messageIdStr} deleted.`);
 
-                     // Update controls on the *new* last message
-                     updateLastMessageControls(); // <--- ENSURE THIS IS CALLED
+                     updateLastMessageControls(); // Update controls on the *new* last message
 
                      if (chatHistory.length === 0) {
-                          displayWelcomeMessage();
+                          displayWelcomeMessage(true); // Force display welcome
                      }
                 } else {
-                     console.warn("Message to delete not found in history:", messageToDelete);
-                     removeMessageFromDOM(messageToDelete); // Still try to remove from DOM
-                     updateLastMessageControls(); // Still update controls just in case
+                     console.warn("Message to delete not found in history:", messageIdStr);
+                     removeMessageFromDOM(messageIdStr); // Still try to remove from DOM
+                     updateLastMessageControls();
+                     if (chatHistory.length === 0) displayWelcomeMessage(true);
                 }
 
                 messageToDelete = null;
                 toggleModal(deleteModal, false);
-            }   
+            }
 
             function regenerateMessageHandler(assistantMessageId) {
-                 const assistantMsgIndex = chatHistory.findIndex(msg => msg.id === assistantMessageId && msg.role === 'assistant');
+                 const assistantMsgIdStr = String(assistantMessageId);
+                 const assistantMsgIndex = chatHistory.findIndex(msg => String(msg.id) === assistantMsgIdStr && msg.role === 'assistant');
 
-                 // We only allow regenerating the *very last* assistant message
-                 if (assistantMsgIndex !== chatHistory.length - 1) {
-                      console.warn("Cannot regenerate: Not the last assistant message.", assistantMessageId);
-                      // Optional: Add user feedback alert("Можно регенерировать только последний ответ.")
+                 // Only allow regenerating the *very last* message overall, if it's an assistant one
+                 if (assistantMsgIndex === -1 || assistantMsgIndex !== chatHistory.length - 1) {
+                      console.warn("Cannot regenerate: Not the last message or not an assistant message.", assistantMsgIdStr);
+                      showToast("Можно регенерировать только последний ответ.", true);
                       return;
                  }
 
-                // Remove the assistant message to be regenerated
-                const messageToRemove = chatHistory.pop();
-                removeMessageFromDOM(messageToRemove.id);
-                saveCurrentChatState(); // Save state *before* sending request
+                 if (chatHistory.length < 1) { // Needs at least the assistant message itself
+                     console.error("Cannot regenerate: History is empty.");
+                     return;
+                 }
 
-                if (chatHistory.length === 0) {
-                    console.error("Cannot regenerate: No preceding messages found.");
-                     displayWelcomeMessage();
-                    return;
-                }
+                 // Remove the assistant message to be regenerated from history
+                 const messageToRemove = chatHistory.pop();
+                 removeMessageFromDOM(messageToRemove.id);
 
-                // Prepare and send the request again, using the history *without* the last assistant message
-                const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
+                 // Save the state *without* the message we are regenerating
+                 saveCurrentChatState();
 
-                let effectiveModelId = chatSettings.model;
-                let effectiveProvider = chatSettings.provider;
+                  if (chatHistory.length === 0) {
+                     console.warn("Cannot regenerate: No preceding messages after removal.");
+                     displayWelcomeMessage(true);
+                     return; // Nothing to send to API
+                 }
 
+                 // Prepare and send the request again
+                 const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content })); // History *without* the last one
+
+                 let effectiveModelId = chatSettings.model;
+                 let effectiveProvider = chatSettings.provider;
                  if (chatSettings.thinkingMode && chatSettings.thinkingModel) {
                     effectiveModelId = chatSettings.thinkingModel;
                     console.log(`Regenerating with thinking model: ${effectiveModelId} via provider: ${effectiveProvider}`);
-                } else {
+                 } else {
                     console.log(`Regenerating with base model: ${effectiveModelId} via provider: ${effectiveProvider}`);
-                }
+                 }
 
-                const loadingMsgId = Date.now() + "-loading";
-                addMessageToDOM('assistant', '<div class="loader"></div> Регенерируем ответ...', loadingMsgId, false, true);
+                 const loadingMsgId = Date.now() + "-loading-regen";
+                 addMessageToDOM('assistant', '<div class="loader"></div> Регенерируем ответ...', loadingMsgId, false, true);
 
-                 fetch('/chat', {
+                 fetch('/chat', { // Use the same /chat endpoint
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
                         messages: messagesPayload,
                         provider: effectiveProvider,
@@ -1645,92 +1760,86 @@
                     })
                  })
                  .then(response => {
-                     removeMessageFromDOM(loadingMsgId);
-                      if (!response.ok) {
-                          // Re-add the original message if regeneration fails? Maybe too complex. Show error instead.
-                          return response.json().then(errData => {
+                     if (!response.ok) {
+                         return response.json()
+                            .catch(() => { throw new Error(`HTTP error ${response.status} - ${response.statusText}`); })
+                            .then(errData => {
                                 const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
                                 throw new Error(errorMessage);
-                            }).catch(() => { throw new Error(`HTTP error ${response.status}`); });
-                      }
+                             });
+                     }
                      return response.json();
                  })
                  .then(data => {
-                    if (data.response) {
-                        const newAssistantMessage = { role: 'assistant', content: data.response, id: Date.now() + "-assistant" };
-                        addMessageToDOM('assistant', data.response, newAssistantMessage.id); // Adds controls automatically
-                        chatHistory.push(newAssistantMessage);
-                        saveCurrentChatState(); // Save state *after* successful regeneration
-                    } else if (data.error || data.detail) {
-                         const errorMsg = data.error || data.detail;
-                         console.error("API Error during regeneration:", errorMsg);
-                         addMessageToDOM('assistant', `Ошибка API при регенерации: ${escapeHtml(errorMsg)}`, Date.now() + "-error", true);
-                         // Should we add the old message back? For now, just show error.
-                    } else {
-                         console.error("Unknown API response during regeneration:", data);
-                         addMessageToDOM('assistant', `Неожиданный ответ от сервера при регенерации.`, Date.now() + "-error", true);
-                    }
+                     removeMessageFromDOM(loadingMsgId);
+                     if (data && data.response) {
+                         const newAssistantMessageId = Date.now() + "-assistant-regen";
+                         const newAssistantMessage = { role: 'assistant', content: data.response, id: newAssistantMessageId };
+                         addMessageToDOM('assistant', data.response, newAssistantMessageId); // Adds formatted AI response
+                         chatHistory.push(newAssistantMessage); // Add the new response to history
+                         saveCurrentChatState(); // Save state *after* successful regeneration
+                     } else {
+                         const errorMsg = data?.error || data?.detail || "Ответ от API при регенерации не содержит ожидаемых данных.";
+                         console.error("API Error or Unexpected Response during regeneration:", errorMsg, data);
+                         addMessageToDOM('assistant', `Ошибка API при регенерации: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror-regen", true);
+                         // Re-add the original message? Maybe too complex. Just show error. History is already saved without it.
+                         // User can delete the error and try again, or delete the preceding user message.
+                     }
                  })
                  .catch(error => {
                      console.error("Ошибка при регенерации:", error);
                      removeMessageFromDOM(loadingMsgId);
-                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${escapeHtml(error.message)}`, Date.now() + "-error", true);
+                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${escapeHtml(error.message)}`, Date.now() + "-fetcherror-regen", true);
+                 })
+                 .finally(() => {
+                     updateLastMessageControls(); // Ensure controls are updated after regeneration attempt
                  });
             }
 
             function updateLastMessageControls() {
-                // Find the last message element in the DOM
-                const lastMessageElement = chatContainer.lastElementChild;
-                // Ensure it's a message element and not the welcome container etc.
-                if (!lastMessageElement || !lastMessageElement.classList.contains('message')) {
-                     // If the last element isn't a message (e.g., chat cleared), remove potential leftover buttons from previous states (less critical but cleaner)
-                     // Or simply return if there are no messages.
-                     return;
-                }
+                // Remove existing regenerate buttons from ALL messages first
+                 chatContainer.querySelectorAll('.regenerate-btn').forEach(btn => btn.remove());
 
-                const lastMessageId = lastMessageElement.dataset.id;
-                const lastMessageData = chatHistory.find(msg => msg.id === lastMessageId);
+                 // Find the last message element in the DOM that is NOT temporary
+                 const messageElements = chatContainer.querySelectorAll('.message:not([data-id*="-loading"])');
+                 const lastMessageElement = messageElements[messageElements.length - 1];
 
-                // Find the controls container within the last message
-                 let controlsDiv = lastMessageElement.querySelector('.message-controls');
-                 // If controls don't exist for some reason (e.g., temporary message?), create them.
-                 if (!controlsDiv) {
-                    if (lastMessageData) { // Only add if we have data for it
-                        controlsDiv = createMessageControls(lastMessageId, lastMessageData.role);
-                        lastMessageElement.appendChild(controlsDiv);
-                    } else {
-                        return; // Cannot update controls if data is missing
-                    }
+                 if (!lastMessageElement) return; // No non-temporary messages found
+
+                 const lastMessageId = lastMessageElement.dataset.id;
+                 const lastMessageData = chatHistory.find(msg => String(msg.id) === lastMessageId);
+
+                 // Only add regenerate to the *actual last* message in history, if it's an assistant message
+                 if (lastMessageData &&
+                     lastMessageData.role === 'assistant' &&
+                     chatHistory.length > 0 &&
+                     String(chatHistory[chatHistory.length - 1].id) === lastMessageId)
+                 {
+                     let controlsDiv = lastMessageElement.querySelector('.message-controls');
+                     if (controlsDiv) { // Controls should exist if added by addMessageToDOM
+                         // Create and add the regenerate button
+                         const regenerateBtn = document.createElement('button');
+                         regenerateBtn.className = 'control-btn regenerate-btn';
+                         regenerateBtn.innerHTML = '<i class="fas fa-redo"></i>';
+                         regenerateBtn.title = 'Регенерировать';
+                         regenerateBtn.addEventListener('click', (e) => {
+                             e.stopPropagation();
+                             regenerateMessageHandler(lastMessageId);
+                         });
+
+                         // Insert it between copy and delete for standard order
+                         const copyBtn = controlsDiv.querySelector('.copy-btn');
+                         const deleteBtn = controlsDiv.querySelector('.delete-btn');
+                         if (copyBtn && deleteBtn) {
+                             controlsDiv.insertBefore(regenerateBtn, deleteBtn);
+                         } else if (copyBtn) {
+                              controlsDiv.appendChild(regenerateBtn); // Append if delete missing
+                         } else {
+                             controlsDiv.prepend(regenerateBtn); // Prepend if copy missing
+                         }
+                     }
                  }
-
-                // Find any existing regenerate button within these controls
-                const existingRegenerateBtn = controlsDiv.querySelector('.regenerate-btn');
-
-                // Decide if the regenerate button should be present
-                const shouldHaveRegenerate = lastMessageData &&
-                                             lastMessageData.role === 'assistant' &&
-                                             chatHistory.length > 0 && // Must have history
-                                             chatHistory[chatHistory.length - 1].id === lastMessageId; // Must be the actual last message in history
-
-                if (shouldHaveRegenerate && !existingRegenerateBtn) {
-                    // Add the regenerate button if it should be there but isn't
-                    const regenerateBtn = document.createElement('button');
-                    regenerateBtn.className = 'control-btn regenerate-btn';
-                    regenerateBtn.innerHTML = '<i class="fas fa-redo"></i>';
-                    regenerateBtn.title = 'Регенерировать';
-                    regenerateBtn.addEventListener('click', () => regenerateMessageHandler(lastMessageId));
-                    // Insert it after the copy button for consistency, or just append
-                    const copyBtn = controlsDiv.querySelector('.copy-btn');
-                    if (copyBtn && copyBtn.nextSibling) {
-                        controlsDiv.insertBefore(regenerateBtn, copyBtn.nextSibling);
-                    } else {
-                        controlsDiv.appendChild(regenerateBtn); // Append if copy button not found or is last
-                    }
-                } else if (!shouldHaveRegenerate && existingRegenerateBtn) {
-                    // Remove the regenerate button if it shouldn't be there but is
-                    existingRegenerateBtn.remove();
-                }
-            }
+             }
 
             function openSettings() {
                 updateSettingsUI(); // Ensure panel shows current state
@@ -1742,51 +1851,69 @@
             }
 
             function saveSettingsHandler() {
-                // Model selection is handled instantly via modal click.
+                // Model selection is handled instantly.
                 // Update other settings from the panel inputs.
-                chatSettings.maxTokens = parseInt(maxTokens.value) || 2048;
-                chatSettings.temperature = parseFloat(temperature.value) || 1; // Use parseFloat for temperature
+                const newMaxTokens = parseInt(maxTokens.value);
+                const newTemperature = parseFloat(temperature.value); // Use parseFloat
+
+                if (!isNaN(newMaxTokens) && newMaxTokens >= parseInt(maxTokens.min) && newMaxTokens <= parseInt(maxTokens.max)) {
+                    chatSettings.maxTokens = newMaxTokens;
+                } else {
+                    maxTokens.value = chatSettings.maxTokens; // Revert UI if invalid
+                    showToast(`Неверное значение токенов (допустимо ${maxTokens.min}-${maxTokens.max})`, true);
+                }
+
+                if (!isNaN(newTemperature) && newTemperature >= parseFloat(temperature.min) && newTemperature <= parseFloat(temperature.max)) {
+                    chatSettings.temperature = newTemperature;
+                } else {
+                    temperature.value = chatSettings.temperature; // Revert UI if invalid
+                     showToast(`Неверное значение температуры (допустимо ${temperature.min}-${temperature.max})`, true);
+                }
+
                  // Only update thinking mode if the toggle is enabled
                  if (!thinkingModeToggle.disabled) {
                      chatSettings.thinkingMode = thinkingModeToggle.checked;
                  } else {
-                     // If disabled (because model doesn't support it), ensure it's false
-                     chatSettings.thinkingMode = false;
+                     chatSettings.thinkingMode = false; // Ensure it's false if disabled
                  }
 
                  // Save updated settings to the current chat if one is active
                  saveCurrentChatState();
 
-                 console.log("Settings updated:", JSON.parse(JSON.stringify(chatSettings)));
-                closeSettingsPanel();
+                 console.log("Settings updated for current chat:", JSON.parse(JSON.stringify(chatSettings)));
+                 showToast("Настройки сохранены");
+                 closeSettingsPanel();
+                 updateSettingsUI(); // Refresh UI elements like the thinking mode toggle state
             }
 
             function updateThinkingModeAvailability() {
-                 const modelSupportsThinking = !!chatSettings.thinkingModel; // Check if a thinking model URL is stored
+                 const modelSupportsThinking = !!chatSettings.thinkingModel;
 
-                 if (modelSupportsThinking) {
-                     thinkingModeToggle.disabled = false;
-                     thinkingModeContainer.classList.remove('disabled');
-                     // Restore checked state based on current setting
-                     thinkingModeToggle.checked = chatSettings.thinkingMode;
-                 } else {
-                     thinkingModeToggle.disabled = true;
-                     thinkingModeContainer.classList.add('disabled');
+                 thinkingModeContainer.classList.toggle('disabled', !modelSupportsThinking);
+                 thinkingModeToggle.disabled = !modelSupportsThinking;
+
+                 if (!modelSupportsThinking && thinkingModeToggle.checked) {
+                     // If model doesn't support it, uncheck and force setting off
                      thinkingModeToggle.checked = false;
-                     // Force the setting off in memory if the model doesn't support it
                      chatSettings.thinkingMode = false;
+                 }
+                 // If model *does* support it, the checked state reflects chatSettings.thinkingMode
+                 // (which was potentially set by the user or loaded from the chat)
+                 else if (modelSupportsThinking) {
+                    thinkingModeToggle.checked = chatSettings.thinkingMode;
                  }
             }
 
             function createNewChat() {
-                currentChatId = null;
-                chatHistory = [];
-                displayWelcomeMessage();
+                currentChatId = null; // Mark as new chat
+                chatHistory = []; // Clear history
+                displayWelcomeMessage(true); // Force display welcome
                 chatTitleText.textContent = 'Новый чат';
 
+                // Deactivate any active chat item in the list
                 document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
 
-                // Reset settings to application defaults (based on first available model)
+                // Reset chatSettings to application defaults based on the first available model
                 if (modelsData && Object.keys(modelsData).length > 0) {
                      const firstProviderKey = Object.keys(modelsData)[0];
                      const providerModels = modelsData[firstProviderKey];
@@ -1796,71 +1923,91 @@
                          const categoryProvider = providerModels.provider;
                          const actualProvider = modelInfo.provider || categoryProvider;
 
-                         // Reset chatSettings object
+                         // Reset chatSettings object completely
                          chatSettings = {
                              modelKey: firstModelKey,
                              model: modelInfo.model,
                              provider: actualProvider,
                              thinkingModel: modelInfo.thinking_model || null,
                              thinkingMode: false, // Default off
-                             maxTokens: 2048, // Default tokens
-                             temperature: 1    // Default temp
+                             maxTokens: 2048,     // Default tokens
+                             temperature: 1       // Default temp
                          };
-                         updateSettingsUI(); // Update panel UI to reflect these defaults
+                     } else {
+                         // No models found in first provider, keep settings potentially empty or minimal
+                         chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
                      }
                 } else {
-                    // Handle case where models failed to load - keep settings empty?
-                    console.warn("Cannot reset settings, models not loaded.");
+                    // Handle case where models failed to load - minimal default settings
+                     chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
+                    console.warn("Cannot reset settings to default model, models not loaded or empty.");
                 }
 
-                if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                    toggleSidebar();
-                }
+                 updateSettingsUI(); // Update panel UI to reflect these defaults
+
+                 if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                     toggleSidebar(); // Close sidebar on mobile
+                 }
                  messageInput.focus();
             }
 
-            function displayWelcomeMessage() {
-                 chatContainer.innerHTML = ''; // Clear existing messages
-                 const welcomeDiv = document.createElement('div');
-                 welcomeDiv.className = 'welcome-container';
-                 welcomeDiv.id = 'welcomeContainer'; // Re-add ID if needed
-                 welcomeDiv.innerHTML = `
-                     <h2>Добро пожаловать в ИИ-чат</h2>
-                     <p>Начните новый разговор с искусственным интеллектом. Вы можете настроить модель и параметры чата в настройках.</p>
-                 `;
-                 chatContainer.appendChild(welcomeDiv);
-            }
+            /**
+             * Displays the welcome message, optionally forcing it even if messages exist.
+             * @param {boolean} force - If true, always display welcome message.
+             */
+            function displayWelcomeMessage(force = false) {
+                 const welcome = document.getElementById('welcomeContainer');
+                 if (force || chatContainer.children.length === 0 || (chatContainer.children.length === 1 && welcome)) {
+                     chatContainer.innerHTML = ''; // Clear existing messages first
+                     const welcomeDiv = document.createElement('div');
+                     welcomeDiv.className = 'welcome-container';
+                     welcomeDiv.id = 'welcomeContainer'; // Re-add ID
+                     welcomeDiv.innerHTML = `
+                         <h2>Добро пожаловать в ИИ-чат</h2>
+                         <p>Начните новый разговор с искусственным интеллектом. Вы можете настроить модель и параметры чата в настройках.</p>
+                     `;
+                     welcomeDiv.style.display = 'flex'; // Ensure it's visible
+                     chatContainer.appendChild(welcomeDiv);
+                 } else if (welcome) {
+                     // If welcome exists but shouldn't be shown (because there are messages)
+                     welcome.style.display = 'none';
+                 }
+             }
 
 
             function createNewChatEntry(firstMessageContent) {
-                const newChatId = Date.now();
+                const newChatId = Date.now(); // Use timestamp as a simple unique ID
                 currentChatId = newChatId;
 
-                // Generate a title (escaped)
-                let title = firstMessageContent.length > 35
-                    ? escapeHtml(firstMessageContent.substring(0, 35)).trim() + '...'
-                    : escapeHtml(firstMessageContent).trim();
-                if (!title) title = "Без названия"; // Fallback title
+                // Generate a title (using textContent to avoid XSS in title itself)
+                const tempDiv = document.createElement('div');
+                tempDiv.textContent = firstMessageContent; // Safely set content
+                let title = tempDiv.textContent.length > 35
+                    ? tempDiv.textContent.substring(0, 35).trim() + '...'
+                    : tempDiv.textContent.trim();
+                if (!title) title = "Новый чат"; // Fallback title
 
-                // Use the currently configured chat settings for this new chat
+                // Create the new chat object using *current* history and settings
                 const newChat = {
                     id: newChatId,
-                    title: title,
-                    history: [...chatHistory], // History includes the first user message sent
-                    settings: { ...chatSettings } // Clone current settings for this chat
+                    title: title, // Already safe title
+                    // History includes the user message that triggered creation
+                    history: JSON.parse(JSON.stringify(chatHistory)),
+                    // Clone current settings *at the time of creation*
+                    settings: JSON.parse(JSON.stringify(chatSettings))
                 };
 
-                chats.unshift(newChat); // Add to the beginning of the list
-                 renderChatList(); // Renders list with new chat at top and active
-                 chatTitleText.textContent = title; // Update header title
-                 saveChats(); // Save immediately after creation
+                chats.unshift(newChat); // Add to the beginning of the runtime list
+                renderChatList(); // Re-render list with new chat active at the top
+                chatTitleText.textContent = title; // Update main header title
+                saveChats(); // Save the updated list to localStorage
             }
 
             function renderChatList() {
-                 chatList.innerHTML = '';
+                 chatList.innerHTML = ''; // Clear previous list
 
                  if (chats.length === 0) {
-                      chatList.innerHTML = '<div class="chat-item" style="opacity: 0.7;">Нет сохраненных чатов</div>';
+                      chatList.innerHTML = '<div class="chat-item" style="opacity: 0.7; padding-left: 16px;">Нет сохраненных чатов</div>';
                       return;
                  }
 
@@ -1877,21 +2024,21 @@
                      titleDiv.className = 'chat-title';
                      titleDiv.textContent = chat.title || "Без названия"; // Use safe title
 
-                     chatItem.innerHTML = `<div class="chat-icon"><i class="fas fa-comment-dots"></i></div>`;
+                     const iconDiv = document.createElement('div');
+                     iconDiv.className = 'chat-icon';
+                     iconDiv.innerHTML = '<i class="fas fa-comment-dots"></i>';
+
+                     chatItem.appendChild(iconDiv);
                      chatItem.appendChild(titleDiv);
 
-                     // TODO: Add delete chat button here
-                     // const deleteChatBtn = document.createElement('button');
-                     // deleteChatBtn.innerHTML = '<i class="fas fa-times"></i>';
-                     // deleteChatBtn.className = 'delete-chat-btn control-btn'; // Reuse styles maybe
-                     // deleteChatBtn.style.marginLeft = 'auto'; // Push to the right
-                     // deleteChatBtn.title = 'Удалить чат';
-                     // deleteChatBtn.onclick = (e) => { e.stopPropagation(); /* Prevent loading chat */; confirmDeleteChat(chat.id); };
-                     // chatItem.appendChild(deleteChatBtn);
+                     // TODO: Implement delete chat functionality if needed
+                     // const deleteChatBtn = document.createElement('button'); ...
 
                      chatItem.addEventListener('click', () => {
                          if (chat.id !== currentChatId) { // Avoid reloading if already active
-                            loadChat(chat.id);
+                             loadChat(chat.id);
+                         } else if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                              toggleSidebar(); // Close sidebar even if clicking active chat on mobile
                          }
                      });
 
@@ -1903,35 +2050,38 @@
                  const chatToLoad = chats.find(c => c.id === chatId);
                  if (!chatToLoad) {
                      console.error("Chat not found:", chatId);
-                     // Maybe show an error or default to new chat
-                     createNewChat();
+                     showToast(`Чат с ID ${chatId} не найден.`, true);
+                     createNewChat(); // Default to new chat if load fails
                      return;
                  }
 
                  currentChatId = chatToLoad.id;
-                 // IMPORTANT: Create deep copies to avoid modifying the original `chats` array unintentionally
-                 chatHistory = JSON.parse(JSON.stringify(chatToLoad.history || []));
-                 // Ensure settings are fully loaded, providing defaults if missing
+                 // Load history - ensure it's an array
+                 chatHistory = Array.isArray(chatToLoad.history) ? JSON.parse(JSON.stringify(chatToLoad.history)) : [];
+                 // Load settings - merge with defaults to handle missing properties in old saves
                  chatSettings = {
-                     modelKey: "", // Defaults overwritten below
-                     model: "",
-                     provider: "",
-                     thinkingModel: null,
-                     thinkingMode: false,
-                     maxTokens: 2048,
-                     temperature: 1,
-                     ...(chatToLoad.settings || {}) // Merge saved settings, overwriting defaults
+                     modelKey: "", model: "", provider: "", thinkingModel: null,
+                     thinkingMode: false, maxTokens: 2048, temperature: 1,
+                     ...(chatToLoad.settings || {}) // Overwrite defaults with saved settings
                  };
 
-
-                 // Update UI
+                 // --- Update UI based on loaded data ---
                  chatTitleText.textContent = chatToLoad.title || "Без названия";
                  chatContainer.innerHTML = ''; // Clear current messages
+
                  if (chatHistory.length > 0) {
-                    chatHistory.forEach(msg => addMessageToDOM(msg.role, msg.content, msg.id));
-                    updateLastMessageControls(); // Ensure controls on the last message are correct
+                    // Hide welcome message explicitly
+                    const welcome = document.getElementById('welcomeContainer');
+                    if(welcome) welcome.style.display = 'none';
+
+                    chatHistory.forEach(msg => {
+                        // Ensure message has an ID, generate one if missing (for robustness)
+                        if (!msg.id) msg.id = Date.now() + "-loaded-" + Math.random();
+                        addMessageToDOM(msg.role, msg.content, msg.id, msg.role === 'assistant' && msg.isError); // Handle potential errors saved in history? (Assume no for now)
+                    });
+                    updateLastMessageControls(); // Update controls on the last loaded message
                  } else {
-                     displayWelcomeMessage(); // Show welcome if chat is empty
+                     displayWelcomeMessage(true); // Show welcome if loaded chat is empty
                  }
 
                  updateSettingsUI(); // Reflect loaded settings in the settings panel
@@ -1943,28 +2093,32 @@
                  messageInput.focus();
              }
 
-
             function loadChats() {
-                 const savedChats = localStorage.getItem('aiChats');
-                 if (savedChats) {
-                     try {
-                         chats = JSON.parse(savedChats);
-                         // Basic validation - ensure it's an array
-                         if (!Array.isArray(chats)) {
-                            console.warn("Saved chats data is not an array, resetting.");
+                 let savedData = null;
+                 try {
+                     savedData = localStorage.getItem('aiChats');
+                     if (savedData) {
+                         chats = JSON.parse(savedData);
+                         // Basic validation - ensure it's an array of objects with IDs
+                         if (!Array.isArray(chats) || !chats.every(c => typeof c === 'object' && c !== null && 'id' in c)) {
+                            console.warn("Saved chats data is invalid, resetting.", chats);
                             chats = [];
                             localStorage.removeItem('aiChats');
+                         } else {
+                             // Sort chats by ID (assuming timestamp ID, newest first)
+                             chats.sort((a, b) => b.id - a.id);
+                             console.log("Loaded and sorted chats from localStorage:", chats.length);
                          }
-                         console.log("Loaded chats from localStorage:", chats.length);
-                     } catch (e) {
-                         console.error("Failed to parse saved chats:", e);
-                         chats = []; // Start fresh if parsing fails
-                         localStorage.removeItem('aiChats'); // Clear corrupted data
+                     } else {
+                         chats = []; // Start empty if nothing saved
+                         console.log("No saved chats found, starting fresh.");
                      }
-                 } else {
-                    chats = []; // Start empty if nothing saved
-                    console.log("No saved chats found, starting fresh.");
+                 } catch (e) {
+                     console.error("Failed to parse or validate saved chats:", e, savedData);
+                     chats = []; // Start fresh if parsing fails
+                     localStorage.removeItem('aiChats'); // Clear corrupted data
                  }
+
                  renderChatList(); // Render whatever was loaded (or empty state)
 
                  // Decide what to show initially: most recent chat or new chat screen
@@ -1973,25 +2127,36 @@
                       if (modelsData) {
                          loadChat(chats[0].id); // Load the most recent chat
                       } else {
-                          // Models not ready yet, wait or default to new chat? Defaulting is safer.
-                          console.log("Models not ready, starting with a new chat screen initially.");
-                          createNewChat();
+                          // Models not ready yet, show loading/new chat placeholder.
+                          // fetchModelsAndSetup() will call loadChats again or load the first chat once models are ready.
+                          console.log("Models not ready yet, waiting for fetch to complete.");
+                          // Keep the "Loading chats..." placeholder visible
+                          initChatListPlaceholder();
+                          // Show welcome screen temporarily in main area
+                          createNewChat(); // Creates empty state, will be replaced by loadChat later
                       }
                  } else {
-                      createNewChat(); // Start new chat if no chats saved or models aren't ready
+                      // No chats saved, or models failed loading initially
+                      createNewChat();
                  }
             }
 
+
+            // Debounced save function
+            let saveTimeout;
             function saveChats() {
-                // Debounce or throttle this if called very frequently
-                try {
-                    localStorage.setItem('aiChats', JSON.stringify(chats));
-                    // console.log("Chats saved."); // Can be noisy
-                } catch (e) {
-                    console.error("Failed to save chats to localStorage:", e);
-                    // Consider notifying the user if storage is full
-                    alert("Ошибка: Не удалось сохранить чаты. Возможно, хранилище переполнено.");
-                }
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    try {
+                        // Sort before saving to maintain order
+                        chats.sort((a, b) => b.id - a.id);
+                        localStorage.setItem('aiChats', JSON.stringify(chats));
+                        // console.log("Chats saved to localStorage."); // Optional: for debugging
+                    } catch (e) {
+                        console.error("Failed to save chats to localStorage:", e);
+                        showToast("Ошибка: Не удалось сохранить чаты. Хранилище может быть переполнено.", true, 5000);
+                    }
+                }, 500); // Debounce saving by 500ms
             }
 
             // Helper to save history and settings for the currently active chat
@@ -1999,29 +2164,36 @@
                  if (currentChatId !== null) {
                      const currentChatIndex = chats.findIndex(c => c.id === currentChatId);
                      if (currentChatIndex !== -1) {
-                         chats[currentChatIndex].history = [...chatHistory];
-                         chats[currentChatIndex].settings = { ...chatSettings };
-                         saveChats(); // Persist changes
+                         // Make deep copies to avoid reference issues
+                         chats[currentChatIndex].history = JSON.parse(JSON.stringify(chatHistory));
+                         chats[currentChatIndex].settings = JSON.parse(JSON.stringify(chatSettings));
+                         // Update title potentially? Only if it's the first message maybe. Let's keep it simple.
+                         // Title is set on creation, not updated automatically after.
+
+                         saveChats(); // Persist changes (debounced)
+                     } else {
+                         console.warn("Attempted to save state for a chat ID not found in the list:", currentChatId);
                      }
                  }
-                 // No need to save if it's a new chat (currentChatId is null) until first message
+                 // No saving needed if currentChatId is null (new chat before first message)
             }
 
             function initChatListPlaceholder() {
                 chatList.innerHTML = `
                     <div class="chat-item" style="opacity: 0.6;">
                         <div class="chat-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                        <div class="chat-title">Загрузка...</div>
+                        <div class="chat-title">Загрузка чатов...</div>
                     </div>`;
             }
 
             function toggleModal(modalElement, show) {
                  if (!modalElement) return;
-                if (show) {
-                    modalElement.classList.add('visible');
-                } else {
-                    modalElement.classList.remove('visible');
-                }
+                 modalElement.classList.toggle('visible', show);
+                 // Optional: Focus management - focus first focusable element in modal when shown
+                 // if (show) {
+                 //     const focusable = modalElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                 //     if (focusable) focusable.focus();
+                 // }
             }
 
         });
