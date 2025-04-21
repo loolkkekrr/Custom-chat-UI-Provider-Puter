@@ -29,7 +29,7 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
     }
     print("МАКС. ТОКЕНОВ: " + str(max_tokens))
     print("МОДЕЛЬ: " + model)
-    print("ПРОВАЙДЕР:" + provider)
+    print("ПРОВАЙДЕР: " + provider)
     payload = {
         "interface": "puter-chat-completion",
         "driver": str(provider),

@@ -89,6 +89,50 @@
       },
       "provider": "openrouter"
     },
+    "Meta": {
+      "Llama 4 Scout": {
+        "model": "meta-llama/llama-4-scout"
+      },
+      "Llama 4 Maverick": {
+      },
+      "Llama 3.3 70B": {
+        "model": "meta-llama/llama-3.3-70b-instruct"
+      },
+      "Llama 3.2 1B": {
+        "model": "meta-llama/llama-3.2-1b-instruct"
+      },
+      "Llama 3.2 3B": {
+        "model": "meta-llama/llama-3.2-3b-instruct"
+      },
+      "Llama 3.2 11B": {
+        "model": "meta-llama/llama-3.2-11b-vision-instruct"
+      },
+      "Llama 3.2 90B": {
+        "model": "meta-llama/llama-3.2-90b-vision-instruct"
+      },
+      "Llama 3.1 8B": {
+        "model": "meta-llama/llama-3.1-8b-instruct"
+      },
+      "Llama 3.1 70B": {
+        "model": "meta-llama/llama-3.1-70b-instruct"
+      },
+      "Llama 3.1 405B": {
+        "model": "meta-llama/llama-3.1-405b-instruct"
+      },
+      "Llama 3 8B": {
+        "model": "meta-llama/llama-3-8b-instruct"
+      },
+      "Llama 3 70B": {
+        "model": "meta-llama/llama-3-70b-instruct"
+      },
+      "Llama 2 13B": {
+        "model": "meta-llama/llama-2-13b-chat"
+      },
+      "Llama 2 70B": {
+        "model": "meta-llama/llama-2-70b-chat"
+      },
+      "provider": "openrouter"
+    },
     "Deepseek": {
       "Deepseek V3": {
         "model": "deepseek-chat",
