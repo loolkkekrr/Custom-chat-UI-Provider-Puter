@@ -94,6 +94,7 @@
         "model": "meta-llama/llama-4-scout"
       },
       "Llama 4 Maverick": {
+        "model": "meta-llama/llama-4-maverick"
       },
       "Llama 3.3 70B": {
         "model": "meta-llama/llama-3.3-70b-instruct"
