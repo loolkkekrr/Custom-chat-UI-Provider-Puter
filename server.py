@@ -23,7 +23,7 @@ def call_deepseek_api(messages, provider="openrouter", model="openrouter:anthrop
     url = "https://api.puter.com/drivers/call"
     headers = {
         "Authorization": "Bearer " + str(PUTER_API_TOKEN),
-        "Content-Type": "application/json",
+        "Content-Type": "application/json;charset=UTF-8",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
         "Origin": "https://docs.puter.com"
     }

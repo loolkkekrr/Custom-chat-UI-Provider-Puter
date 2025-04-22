@@ -44,6 +44,10 @@
             --toast-text-light: white;
             --toast-error-bg: var(--error-color);
             --input-focus-border: var(--primary-color); /* For rename input */
+            --delete-btn-color-dark: #aaa;
+            --delete-btn-color-light: #777;
+            --delete-btn-hover-color-dark: var(--error-color);
+            --delete-btn-hover-color-light: var(--error-color);
         }
 
         body {
@@ -127,9 +131,7 @@
             align-items: center;
             gap: 10px;
             transition: background-color 0.2s;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            position: relative; /* Needed for absolute positioning of delete btn */
         }
 
         .chat-item:hover {
@@ -149,13 +151,48 @@
 
         .chat-icon {
             color: var(--primary-color);
+            flex-shrink: 0;
         }
 
         .chat-title {
             flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap; /* Ensure title stays on one line */
+            padding-right: 25px; /* Make space for delete button */
         }
+
+        /* Chat Delete Button */
+        .delete-chat-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--delete-btn-color-dark);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px;
+            border-radius: 4px;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s, color 0.2s;
+            z-index: 2; /* Above chat item content */
+        }
+        .light-theme .delete-chat-btn {
+             color: var(--delete-btn-color-light);
+        }
+        .chat-item:hover .delete-chat-btn {
+            opacity: 0.7; /* Show on hover */
+        }
+        .delete-chat-btn:hover {
+            opacity: 1;
+            color: var(--delete-btn-hover-color-dark);
+        }
+        .light-theme .delete-chat-btn:hover {
+            color: var(--delete-btn-hover-color-light);
+        }
+
 
         .sidebar-footer {
             padding: 16px;
@@ -370,6 +407,7 @@
             color: var(--code-text-dark);
             border: 1px solid var(--border-dark);
             transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            position: relative; /* For copy button positioning */
         }
         .light-theme .assistant-message pre[class*="language-"] {
              background-color: var(--code-bg-light);
@@ -837,6 +875,8 @@
             .message { max-width: 95%; } /* Slightly more width for messages */
             .toast-notification { width: calc(100% - 40px); /* Make toast wider */ left: 20px; transform: translateX(0); text-align: center;}
             .rename-chat-input { width: 70%; } /* Adjust rename input width on mobile */
+            .chat-item:hover .delete-chat-btn { opacity: 0.7; } /* Ensure delete btn is visible on mobile hover/touch */
+            .delete-chat-btn { opacity: 0.7; } /* Make delete button slightly visible on mobile always */
         }
 
     </style>
@@ -860,7 +900,7 @@
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i> <!-- Icon updated dynamically -->
             </button>
-            <span>2025.4.6</span>
+            <span>2025.4.7</span>
         </div>
     </div>
 
@@ -945,7 +985,7 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Message Delete Confirmation Modal -->
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
             <div class="modal-header">
@@ -960,6 +1000,26 @@
             <div class="modal-actions">
                 <button class="cancel-btn" data-close-modal>Отмена</button>
                 <button class="confirm-btn" id="confirmDelete">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteChatModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Удалить чат?</h3>
+                <button class="close-modal" data-close-modal>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                 <p>Вы уверены, что хотите удалить этот чат навсегда? Это действие нельзя отменить! Мы не сможем восстановить историю ваших сообщений!</p>
+                 <p><strong id="chatToDeleteTitle"></strong></p>
+            </div>
+            <div class="modal-actions">
+                <button class="cancel-btn" data-close-modal>Отмена</button>
+                <button class="confirm-btn" id="confirmChatDelete">Удалить чат</button>
             </div>
         </div>
     </div>
@@ -1021,8 +1081,11 @@
             const saveSettingsBtn = document.getElementById('saveSettings');
             const newChatBtn = document.getElementById('newChatBtn');
             const chatList = document.getElementById('chatList');
-            const deleteModal = document.getElementById('deleteModal');
-            const confirmDelete = document.getElementById('confirmDelete');
+            const deleteModal = document.getElementById('deleteModal'); // Message delete
+            const confirmDelete = document.getElementById('confirmDelete'); // Message delete confirm
+            const deleteChatModal = document.getElementById('deleteChatModal'); // Chat delete
+            const confirmChatDelete = document.getElementById('confirmChatDelete'); // Chat delete confirm
+            const chatToDeleteTitle = document.getElementById('chatToDeleteTitle'); // Display title in chat delete modal
             const mobileToggle = document.getElementById('mobileToggle');
             const sidebar = document.querySelector('.sidebar');
             const mainContent = document.getElementById('mainContent');
@@ -1034,6 +1097,7 @@
             // --- Application State ---
             let currentChatId = null;
             let messageToDelete = null;
+            let chatToDeleteId = null; // Stores ID of chat to be deleted
             let chatHistory = [];
             let chatSettings = {
                 modelKey: "",
@@ -1142,12 +1206,6 @@
                     formattedHtml += `<p>${currentParagraph}</p>\n`;
                 }
 
-                // Restore code blocks - This step was incorrect. Code blocks are directly added now.
-                // formattedHtml = formattedHtml.replace(/%%CODEBLOCK_(\d+)%%/g, (match, index) => {
-                //     const idx = parseInt(index, 10);
-                //     return (idx >= 0 && idx < codeBlocks.length) ? codeBlocks[idx] : match;
-                // });
-
                 return formattedHtml.trim();
             }
 
@@ -1197,7 +1255,7 @@
                 }
             });
 
-            // Delete Modal listeners
+            // Message Delete Modal listeners
             deleteModal.addEventListener('click', (event) => {
                 if (event.target === deleteModal || event.target.closest('[data-close-modal]')) {
                     toggleModal(deleteModal, false);
@@ -1205,6 +1263,17 @@
                 }
             });
             confirmDelete.addEventListener('click', deleteMessageHandler);
+
+            // Chat Delete Modal listeners
+            deleteChatModal.addEventListener('click', (event) => {
+                if (event.target === deleteChatModal || event.target.closest('[data-close-modal]')) {
+                    toggleModal(deleteChatModal, false);
+                    chatToDeleteId = null;
+                    chatToDeleteTitle.textContent = ''; // Clear title on close
+                }
+            });
+            confirmChatDelete.addEventListener('click', handleConfirmChatDelete);
+
 
             // Mobile navigation
             mobileToggle.addEventListener('click', toggleSidebar);
@@ -1416,11 +1485,12 @@
 
             function autoResizeTextarea() {
                 messageInput.style.height = 'auto';
-                const maxHeight = parseInt(window.getComputedStyle(messageInput).maxHeight) || 200;
-                const requiredHeight = messageInput.scrollHeight;
-                const newHeight = Math.min(requiredHeight, maxHeight);
+                const scrollHeight = messageInput.scrollHeight;
+                const maxHeightStyle = window.getComputedStyle(messageInput).maxHeight;
+                const maxHeight = parseInt(maxHeightStyle) || 200;
+                const heightWithBuffer = scrollHeight + 2;
+                const newHeight = Math.min(heightWithBuffer, maxHeight);
                 messageInput.style.height = newHeight + 'px';
-                 sendBtn.style.bottom = `26px`; // Keep fixed
             }
 
 
@@ -1549,7 +1619,11 @@
                      messageDiv.innerHTML = safeFormattedHtml;
                      try {
                          messageDiv.querySelectorAll('pre code[class*="language-"]').forEach((block) => {
-                             Prism.highlightElement(block);
+                            // Check if already highlighted by checking parent 'pre'
+                            if (!block.parentNode.classList.contains('prism-highlighted')) {
+                                Prism.highlightElement(block);
+                                block.parentNode.classList.add('prism-highlighted'); // Mark as highlighted
+                            }
                          });
                      } catch (highlightError) {
                          console.warn("Prism highlighting failed:", highlightError);
@@ -1598,7 +1672,7 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'control-btn delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                deleteBtn.title = 'Удалить';
+                deleteBtn.title = 'Удалить сообщение';
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     confirmDeleteHandler(messageId);
@@ -1626,7 +1700,8 @@
                                  icon.classList.remove('fa-copy');
                                  icon.classList.add('fa-check');
                                  setTimeout(() => {
-                                     if(copyBtnElement.querySelector('i.fa-check')) {
+                                     // Check if the icon is still the checkmark before changing back
+                                     if(copyBtnElement.contains(icon) && icon.classList.contains('fa-check')) {
                                          icon.classList.remove('fa-check');
                                          icon.classList.add('fa-copy');
                                      }
@@ -1645,7 +1720,7 @@
 
             function confirmDeleteHandler(messageId) {
                 messageToDelete = messageId;
-                toggleModal(deleteModal, true);
+                toggleModal(deleteModal, true); // Show message delete modal
             }
 
             function deleteMessageHandler() {
@@ -1671,8 +1746,56 @@
                 }
 
                 messageToDelete = null;
-                toggleModal(deleteModal, false);
+                toggleModal(deleteModal, false); // Close message delete modal
             }
+
+            // --- NEW: Chat Deletion ---
+            function confirmChatDeleteHandler(chatId, chatTitle) {
+                chatToDeleteId = chatId;
+                chatToDeleteTitle.textContent = `"${chatTitle || 'Без названия'}"`; // Show title in modal
+                toggleModal(deleteChatModal, true); // Show chat delete modal
+            }
+
+            function handleConfirmChatDelete() {
+                if (chatToDeleteId === null) return;
+
+                const indexToDelete = chats.findIndex(c => c.id === chatToDeleteId);
+
+                if (indexToDelete !== -1) {
+                    const deletedChatId = chatToDeleteId; // Store before resetting
+                    chats.splice(indexToDelete, 1);
+                    saveChats();
+                    renderChatList(); // Update sidebar
+
+                    // Determine what to load next
+                    if (currentChatId === deletedChatId) {
+                        // If the active chat was deleted, load the next one or create new
+                        if (chats.length > 0) {
+                            // Load the first chat in the updated list (which is the newest)
+                            loadChat(chats[0].id);
+                        } else {
+                            // No chats left, create a new one
+                            createNewChat();
+                        }
+                    } else {
+                        // If a non-active chat was deleted, the current view remains,
+                        // but we might need to re-render the list to remove the active highlight
+                        // if the currently active chat was somehow affected (shouldn't happen here)
+                        // renderChatList() already handles highlighting based on currentChatId
+                    }
+
+                    showToast("Чат удален");
+                } else {
+                    console.warn("Chat to delete not found:", chatToDeleteId);
+                    showToast("Ошибка: Чат для удаления не найден.", true);
+                }
+
+                chatToDeleteId = null;
+                chatToDeleteTitle.textContent = '';
+                toggleModal(deleteChatModal, false); // Close chat delete modal
+            }
+            // --- END: Chat Deletion ---
+
 
             function regenerateMessageHandler(assistantMessageId) {
                  const assistantMsgIdStr = String(assistantMessageId);
@@ -1737,6 +1860,9 @@
                      } else {
                          const errorMsg = data?.error || data?.detail || "Ответ от API при регенерации не содержит ожидаемых данных.";
                          addMessageToDOM('assistant', `Ошибка API при регенерации: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror-regen", true);
+                         // Re-add the original message to history if regeneration failed? Maybe not, keep state simple.
+                         // chatHistory.push(messageToRemove); // Re-add original if needed
+                         // saveCurrentChatState();
                      }
                  })
                  .catch(error => {
@@ -1750,40 +1876,43 @@
             }
 
             function updateLastMessageControls() {
+                 // Remove any existing regenerate buttons first
                  chatContainer.querySelectorAll('.regenerate-btn').forEach(btn => btn.remove());
 
                  const messageElements = chatContainer.querySelectorAll('.message:not([data-id*="-loading"])');
+                 if (messageElements.length === 0) return; // No messages, nothing to do
+
                  const lastMessageElement = messageElements[messageElements.length - 1];
 
-                 if (!lastMessageElement) return;
-
+                 // Find the corresponding message data in history
                  const lastMessageId = lastMessageElement.dataset.id;
                  const lastMessageData = chatHistory.find(msg => String(msg.id) === lastMessageId);
 
+                 // Add regenerate button ONLY if the last DOM element corresponds to the last assistant message in history
                  if (lastMessageData &&
                      lastMessageData.role === 'assistant' &&
                      chatHistory.length > 0 &&
                      String(chatHistory[chatHistory.length - 1].id) === lastMessageId)
                  {
                      let controlsDiv = lastMessageElement.querySelector('.message-controls');
+                     // Ensure controls div exists (it should for history messages)
                      if (controlsDiv) {
                          const regenerateBtn = document.createElement('button');
                          regenerateBtn.className = 'control-btn regenerate-btn';
                          regenerateBtn.innerHTML = '<i class="fas fa-redo"></i>';
-                         regenerateBtn.title = 'Регенерировать';
+                         regenerateBtn.title = 'Регенерировать ответ';
                          regenerateBtn.addEventListener('click', (e) => {
                              e.stopPropagation();
                              regenerateMessageHandler(lastMessageId);
                          });
 
-                         const copyBtn = controlsDiv.querySelector('.copy-btn');
+                         // Add the regenerate button before the delete button if possible
                          const deleteBtn = controlsDiv.querySelector('.delete-btn');
-                         if (copyBtn && deleteBtn) {
+                         if (deleteBtn) {
                              controlsDiv.insertBefore(regenerateBtn, deleteBtn);
-                         } else if (copyBtn) {
-                              controlsDiv.appendChild(regenerateBtn);
                          } else {
-                             controlsDiv.prepend(regenerateBtn);
+                             // If delete somehow doesn't exist, just append
+                             controlsDiv.appendChild(regenerateBtn);
                          }
                      }
                  }
@@ -1819,13 +1948,13 @@
                  if (!thinkingModeToggle.disabled) {
                      chatSettings.thinkingMode = thinkingModeToggle.checked;
                  } else {
-                     chatSettings.thinkingMode = false;
+                     chatSettings.thinkingMode = false; // Ensure it's false if disabled
                  }
 
                  saveCurrentChatState();
                  showToast("Настройки сохранены");
                  closeSettingsPanel();
-                 updateSettingsUI();
+                 updateSettingsUI(); // Refresh UI just in case validation changed values
             }
 
             function updateThinkingModeAvailability() {
@@ -1833,10 +1962,12 @@
                  thinkingModeContainer.classList.toggle('disabled', !modelSupportsThinking);
                  thinkingModeToggle.disabled = !modelSupportsThinking;
                  if (!modelSupportsThinking && thinkingModeToggle.checked) {
+                     // If model doesn't support it, uncheck and update state
                      thinkingModeToggle.checked = false;
                      chatSettings.thinkingMode = false;
                  }
                  else if (modelSupportsThinking) {
+                    // If model supports it, ensure checkbox reflects current state
                     thinkingModeToggle.checked = chatSettings.thinkingMode;
                  }
             }
@@ -1850,6 +1981,7 @@
 
                 document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
 
+                // Reset settings to defaults based on the first available model
                 if (modelsData && Object.keys(modelsData).length > 0) {
                      const firstProviderKey = Object.keys(modelsData)[0];
                      const providerModels = modelsData[firstProviderKey];
@@ -1864,14 +1996,17 @@
                              maxTokens: 2048, temperature: 1
                          };
                      } else {
+                         // Handle case where first provider has no models listed (except 'provider' key)
                          chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
+                         console.warn("First model provider found, but no specific models listed.");
                      }
                 } else {
+                     // Handle case where models haven't loaded or are empty
                      chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
                     console.warn("Cannot reset settings to default model, models not loaded or empty.");
                 }
 
-                 updateSettingsUI();
+                 updateSettingsUI(); // Apply the reset settings to the UI
 
                  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
                      toggleSidebar();
@@ -1885,20 +2020,23 @@
              */
             function displayWelcomeMessage(force = false) {
                  const welcome = document.getElementById('welcomeContainer');
-                 if (force || chatContainer.children.length === 0 || (chatContainer.children.length === 1 && welcome)) {
-                     chatContainer.innerHTML = '';
+                 // Check if forcing, or if the chat container is empty, or only contains the welcome message itself
+                 if (force || chatContainer.children.length === 0 || (chatContainer.children.length === 1 && chatContainer.firstElementChild.id === 'welcomeContainer')) {
+                     chatContainer.innerHTML = ''; // Clear previous content
                      const welcomeDiv = document.createElement('div');
                      welcomeDiv.className = 'welcome-container';
-                     welcomeDiv.id = 'welcomeContainer';
+                     welcomeDiv.id = 'welcomeContainer'; // Ensure it has the ID for future checks
                      welcomeDiv.innerHTML = `
                          <h2>Добро пожаловать в ИИ-чат</h2>
                          <p>Начните новый разговор с искусственным интеллектом. Вы можете настроить модель и параметры чата в настройках.</p>
                      `;
-                     welcomeDiv.style.display = 'flex';
+                     welcomeDiv.style.display = 'flex'; // Ensure it's visible
                      chatContainer.appendChild(welcomeDiv);
                  } else if (welcome) {
+                     // If messages exist and the welcome message is present, hide it
                      welcome.style.display = 'none';
                  }
+                 // If messages exist and no welcome message is present, do nothing
              }
 
 
@@ -1906,34 +2044,39 @@
                 const newChatId = Date.now();
                 currentChatId = newChatId;
 
+                // Generate a title from the first message
                 const tempDiv = document.createElement('div');
                 tempDiv.textContent = firstMessageContent;
                 let title = tempDiv.textContent.length > 35
                     ? tempDiv.textContent.substring(0, 35).trim() + '...'
                     : tempDiv.textContent.trim();
-                if (!title) title = "Новый чат";
+                if (!title) title = "Новый чат"; // Default title if first message is empty/whitespace
 
                 const newChat = {
                     id: newChatId,
                     title: title,
+                    // Ensure history and settings are deep copied
                     history: JSON.parse(JSON.stringify(chatHistory)),
                     settings: JSON.parse(JSON.stringify(chatSettings))
                 };
 
-                chats.unshift(newChat);
-                renderChatList();
+                chats.unshift(newChat); // Add to the beginning (top of the list)
+                renderChatList(); // Re-render the list to include the new chat
                 chatTitleText.textContent = title; // Set header title
                 chatTitleText.title = `"${title}" - Двойной клик для переименования`; // Update tooltip
-                saveChats();
+                saveChats(); // Persist the new chat list
             }
 
             function renderChatList() {
-                 chatList.innerHTML = '';
+                 chatList.innerHTML = ''; // Clear existing list
 
                  if (chats.length === 0) {
                       chatList.innerHTML = '<div class="chat-item" style="opacity: 0.7; padding-left: 16px;">Нет сохраненных чатов</div>';
                       return;
                  }
+
+                 // Ensure chats are sorted newest first for rendering
+                 chats.sort((a, b) => b.id - a.id);
 
                  chats.forEach(chat => {
                      const chatItem = document.createElement('div');
@@ -1943,25 +2086,48 @@
                          chatItem.classList.add('active');
                      }
 
-                     const titleDiv = document.createElement('div');
-                     titleDiv.className = 'chat-title';
-                     titleDiv.textContent = chat.title || "Без названия";
-
                      const iconDiv = document.createElement('div');
                      iconDiv.className = 'chat-icon';
                      iconDiv.innerHTML = '<i class="fas fa-comment-dots"></i>';
 
+                     const titleDiv = document.createElement('div');
+                     titleDiv.className = 'chat-title';
+                     titleDiv.textContent = chat.title || "Без названия";
+
+                     // --- NEW: Add Delete Button ---
+                     const deleteBtn = document.createElement('button');
+                     deleteBtn.className = 'delete-chat-btn';
+                     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Use a slightly different icon?
+                     deleteBtn.title = 'Удалить этот чат';
+                     deleteBtn.dataset.chatId = chat.id; // Store ID for the handler
+
+                     deleteBtn.addEventListener('click', (e) => {
+                         e.stopPropagation(); // IMPORTANT: Prevent chat item click (loadChat)
+                         const idToDelete = e.currentTarget.dataset.chatId;
+                         const chatToDelete = chats.find(c => String(c.id) === idToDelete);
+                         if (chatToDelete) {
+                            confirmChatDeleteHandler(chatToDelete.id, chatToDelete.title);
+                         } else {
+                             console.error("Chat data not found for delete button:", idToDelete);
+                         }
+                     });
+                     // --- END: Add Delete Button ---
+
                      chatItem.appendChild(iconDiv);
                      chatItem.appendChild(titleDiv);
+                     chatItem.appendChild(deleteBtn); // Add the button to the item
 
                      chatItem.addEventListener('click', () => {
-                         if (chat.id !== currentChatId || isRenaming) { // Also prevent load if renaming
-                             if (isRenaming) {
-                                 const renameInput = chatTitleContainer.querySelector('.rename-chat-input');
-                                 if (renameInput) renameInput.blur(); // Attempt to finish rename before switching
-                             }
+                         // Prevent loading if renaming is active or if clicking the already active chat
+                         if (isRenaming) {
+                             const renameInput = chatTitleContainer.querySelector('.rename-chat-input');
+                             if (renameInput) renameInput.blur(); // Attempt to finish rename first
+                             return; // Don't load chat while renaming
+                         }
+                         if (chat.id !== currentChatId) {
                              loadChat(chat.id);
                          } else if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                             // If clicking the active chat on mobile, just close the sidebar
                               toggleSidebar();
                          }
                      });
@@ -1977,50 +2143,59 @@
                      if (renameInput) renameInput.blur(); // Attempt to finish rename first
                      // Optionally show a toast or prevent loading explicitly
                      // showToast("Завершите переименование перед сменой чата.", true);
-                     // return;
+                     // return; // Stop loading if renaming
                  }
 
                  const chatToLoad = chats.find(c => c.id === chatId);
                  if (!chatToLoad) {
                      console.error("Chat not found:", chatId);
                      showToast(`Чат с ID ${chatId} не найден.`, true);
-                     createNewChat();
+                     // Attempt to load the first available chat or create new if none exist
+                     if (chats.length > 0) {
+                         loadChat(chats[0].id);
+                     } else {
+                         createNewChat();
+                     }
                      return;
                  }
 
                  currentChatId = chatToLoad.id;
+                 // Deep copy history and settings to avoid mutation issues
                  chatHistory = Array.isArray(chatToLoad.history) ? JSON.parse(JSON.stringify(chatToLoad.history)) : [];
+                 // Ensure default settings are present if saved settings are incomplete
                  chatSettings = {
                      modelKey: "", model: "", provider: "", thinkingModel: null,
                      thinkingMode: false, maxTokens: 2048, temperature: 1,
-                     ...(chatToLoad.settings || {})
+                     ...(chatToLoad.settings || {}) // Merge saved settings over defaults
                  };
 
                  const currentTitle = chatToLoad.title || "Без названия";
                  chatTitleText.textContent = currentTitle;
                  chatTitleText.title = `"${currentTitle}" - Двойной клик для переименования`; // Update tooltip
-                 chatContainer.innerHTML = '';
+                 chatContainer.innerHTML = ''; // Clear previous chat messages
 
                  if (chatHistory.length > 0) {
                     const welcome = document.getElementById('welcomeContainer');
-                    if(welcome) welcome.style.display = 'none';
+                    if(welcome) welcome.style.display = 'none'; // Hide welcome if messages exist
 
                     chatHistory.forEach(msg => {
-                        if (!msg.id) msg.id = Date.now() + "-loaded-" + Math.random();
+                        // Assign temporary ID if loaded message lacks one (for robustness)
+                        if (!msg.id) msg.id = Date.now() + "-loaded-" + Math.random().toString(16).substring(2);
                         addMessageToDOM(msg.role, msg.content, msg.id, msg.role === 'assistant' && msg.isError);
                     });
-                    updateLastMessageControls();
+                    updateLastMessageControls(); // Add regenerate button if applicable
                  } else {
-                     displayWelcomeMessage(true);
+                     // If chat history is empty, show the welcome message
+                     displayWelcomeMessage(true); // Force display
                  }
 
-                 updateSettingsUI();
-                 renderChatList(); // Highlights active chat
+                 updateSettingsUI(); // Reflect the loaded chat's settings
+                 renderChatList(); // Re-render list to highlight the newly active chat
 
                  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                     toggleSidebar();
+                     toggleSidebar(); // Close sidebar on mobile after loading
                  }
-                 messageInput.focus();
+                 messageInput.focus(); // Focus input field
              }
 
             function loadChats() {
@@ -2029,12 +2204,13 @@
                      savedData = localStorage.getItem('aiChats');
                      if (savedData) {
                          chats = JSON.parse(savedData);
+                         // Basic validation
                          if (!Array.isArray(chats) || !chats.every(c => typeof c === 'object' && c !== null && 'id' in c)) {
                             console.warn("Saved chats data is invalid, resetting.", chats);
                             chats = [];
                             localStorage.removeItem('aiChats');
                          } else {
-                             chats.sort((a, b) => b.id - a.id); // Sort newest first
+                             chats.sort((a, b) => b.id - a.id); // Sort newest first by ID (timestamp)
                          }
                      } else {
                          chats = [];
@@ -2042,20 +2218,25 @@
                  } catch (e) {
                      console.error("Failed to parse or validate saved chats:", e, savedData);
                      chats = [];
-                     localStorage.removeItem('aiChats');
+                     localStorage.removeItem('aiChats'); // Clear corrupted data
                  }
 
-                 renderChatList();
+                 renderChatList(); // Render the loaded or empty list
 
+                 // Load the first chat if available and models are ready
                  if (chats.length > 0 && chats[0].id) {
-                      if (modelsData) {
+                      if (modelsData) { // Check if models are loaded
                          loadChat(chats[0].id);
                       } else {
-                          console.log("Models not ready yet, waiting for fetch to complete before loading first chat.");
+                          // Models not ready yet, wait for fetchModelsAndSetup to call loadChats again
+                          console.log("Models not ready yet, deferring initial chat load.");
+                          // Keep the placeholder visible
                           initChatListPlaceholder();
-                          createNewChat(); // Show new chat temporarily
+                          // Display a temporary "New Chat" state until models load
+                          createNewChat();
                       }
                  } else {
+                      // No saved chats, start with a new chat
                       createNewChat();
                  }
             }
@@ -2067,27 +2248,32 @@
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
                     try {
+                        // Ensure chats are sorted before saving (optional, but consistent)
                         chats.sort((a, b) => b.id - a.id);
                         localStorage.setItem('aiChats', JSON.stringify(chats));
+                        console.log("Chats saved to localStorage.");
                     } catch (e) {
                         console.error("Failed to save chats to localStorage:", e);
                         showToast("Ошибка: Не удалось сохранить чаты. Хранилище может быть переполнено.", true, 5000);
                     }
-                }, 500);
+                }, 500); // Save 500ms after the last modification
             }
 
             function saveCurrentChatState() {
                  if (currentChatId !== null) {
                      const currentChatIndex = chats.findIndex(c => c.id === currentChatId);
                      if (currentChatIndex !== -1) {
+                         // Deep copy history and settings to prevent mutations
                          chats[currentChatIndex].history = JSON.parse(JSON.stringify(chatHistory));
                          chats[currentChatIndex].settings = JSON.parse(JSON.stringify(chatSettings));
-                         // Title is updated separately via rename function now
-                         saveChats();
+                         // Title is updated separately via rename function
+                         saveChats(); // Trigger debounced save
                      } else {
                          console.warn("Attempted to save state for a chat ID not found in the list:", currentChatId);
+                         // This could happen if a chat was deleted externally or state is corrupted
                      }
                  }
+                 // No need to save if currentChatId is null (it's a new, unsaved chat)
             }
 
             function initChatListPlaceholder() {
@@ -2101,6 +2287,13 @@
             function toggleModal(modalElement, show) {
                  if (!modalElement) return;
                  modalElement.classList.toggle('visible', show);
+                 // Focus the first focusable element (e.g., confirm button) when opening modal? (Accessibility improvement)
+                 // if (show) {
+                 //    const focusable = modalElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                 //    if (focusable) {
+                 //        setTimeout(() => focusable.focus(), 50); // Delay focus slightly
+                 //    }
+                 // }
             }
 
             // --- Chat Title Renaming ---
@@ -2137,13 +2330,13 @@
                         const newTitle = input.value.trim();
                         finalTitle = newTitle || "Без названия"; // Use default if empty
 
-                        // Find chat and update
+                        // Find chat and update title in the main 'chats' array
                         const chatIndex = chats.findIndex(c => c.id === currentChatId);
                         if (chatIndex !== -1) {
                             if (chats[chatIndex].title !== finalTitle) { // Only save if changed
                                 chats[chatIndex].title = finalTitle;
-                                saveChats();       // Save to localStorage
-                                renderChatList();  // Update sidebar list
+                                saveChats();       // Save updated chats array to localStorage
+                                renderChatList();  // Update sidebar list to reflect new title
                                 console.log(`Chat ${currentChatId} renamed to "${finalTitle}"`);
                             }
                         } else {
@@ -2153,12 +2346,12 @@
                         }
                     } else {
                          console.log("Rename cancelled.");
-                         // finalTitle is already originalTitle
+                         // finalTitle remains originalTitle
                     }
 
-                    // Cleanup
+                    // Cleanup UI
                     input.remove(); // Remove the input field
-                    chatTitleText.textContent = finalTitle; // Update H2 text
+                    chatTitleText.textContent = finalTitle; // Update H2 text immediately
                     chatTitleText.title = `"${finalTitle}" - Двойной клик для переименования`; // Update tooltip
                     chatTitleText.style.display = ''; // Show the H2 title again
                     isRenaming = false; // Reset flag
@@ -2167,12 +2360,19 @@
                 // Add listeners to the input
                 input.addEventListener('blur', () => {
                     // Delay slightly to allow potential click on other elements (like sidebar) to register first
-                    setTimeout(() => finishRename(true), 100); // Save on blur
+                    // If the click was on the sidebar chat item, loadChat will handle the blur first.
+                    // If the click was outside, this timeout will save.
+                    setTimeout(() => {
+                        // Check if renaming is still active before saving (might have been cancelled by Esc)
+                        if (isRenaming) {
+                            finishRename(true); // Save on blur
+                        }
+                    }, 100);
                 });
 
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
-                        e.preventDefault();
+                        e.preventDefault(); // Prevent form submission/newline
                         finishRename(true); // Save on Enter
                     } else if (e.key === 'Escape') {
                         finishRename(false); // Cancel on Escape
