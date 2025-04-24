@@ -38,6 +38,12 @@
             --active-dark: rgba(124, 77, 255, 0.2);
             --active-light: rgba(124, 77, 255, 0.15);
             --error-color: #ff4d4d;
+            --warning-color-dark-bg: #4d3800;
+            --warning-color-dark-text: #ffcc00;
+            --warning-color-dark-border: #664d00;
+            --warning-color-light-bg: #fff3cd;
+            --warning-color-light-text: #664d03;
+            --warning-color-light-border: #ffecb5;
             --toast-bg-dark: var(--primary-color);
             --toast-bg-light: var(--primary-color);
             --toast-text-dark: white;
@@ -249,6 +255,7 @@
              transition: border-color 0.3s;
              min-height: 59px; /* Ensure consistent height even with input */
              box-sizing: border-box;
+             position: relative; /* For potential elements like warning banner */
         }
 
         .light-theme .chat-header {
@@ -326,6 +333,69 @@
 
         .light-theme .settings-btn:hover {
             background-color: var(--hover-light);
+        }
+
+        /* Model Warning Banner */
+        .model-warning-banner {
+            background-color: var(--warning-color-dark-bg);
+            color: var(--warning-color-dark-text);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+            border-bottom: 1px solid var(--warning-color-dark-border);
+            flex-shrink: 0; /* Prevent shrinking */
+            gap: 10px;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .light-theme .model-warning-banner {
+            background-color: var(--warning-color-light-bg);
+            color: var(--warning-color-light-text);
+            border-bottom: 1px solid var(--warning-color-light-border);
+        }
+
+        .model-warning-banner .warning-icon {
+            /* color: #ff8800; Orange-ish icon */
+            font-size: 16px;
+            margin-right: 5px;
+            opacity: 0.9;
+        }
+
+        .model-warning-banner .warning-text {
+            flex-grow: 1; /* Take available space */
+            margin-right: 10px; /* Space before actions */
+        }
+        .model-warning-banner .warning-text strong {
+            font-weight: 600;
+        }
+
+        .model-warning-banner .warning-actions {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .model-warning-banner .warning-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: inherit;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .model-warning-banner .warning-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .light-theme .model-warning-banner .warning-btn {
+            background-color: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .model-warning-banner .warning-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
         }
 
         .chat-container {
@@ -877,6 +947,8 @@
             .rename-chat-input { width: 70%; } /* Adjust rename input width on mobile */
             .chat-item:hover .delete-chat-btn { opacity: 0.7; } /* Ensure delete btn is visible on mobile hover/touch */
             .delete-chat-btn { opacity: 0.7; } /* Make delete button slightly visible on mobile always */
+            .model-warning-banner { flex-direction: column; align-items: flex-start; } /* Stack warning elements */
+            .model-warning-banner .warning-actions { margin-top: 5px; width: 100%; justify-content: flex-end; }
         }
 
     </style>
@@ -900,7 +972,7 @@
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i> <!-- Icon updated dynamically -->
             </button>
-            <span>2025.4.7</span>
+            <span>2025.4.8</span>
         </div>
     </div>
 
@@ -920,6 +992,17 @@
                 </button>
             </div>
         </div>
+
+        <!-- Model Warning Banner -->
+        <div class="model-warning-banner" id="modelWarningBanner" style="display: none;">
+            <i class="fas fa-exclamation-triangle warning-icon"></i>
+            <span class="warning-text">Мы больше не поддерживаем '<strong id="unavailableModelName"></strong>', работоспособность устаревшей модели не гарантируется.</span>
+            <div class="warning-actions">
+                <button class="warning-btn change-model-btn" id="warningChangeModelBtn">Изменить модель</button>
+                <button class="warning-btn close-warning-btn" id="warningCloseBtn">Закрыть</button>
+            </div>
+        </div>
+        <!-- END Warning Banner -->
 
         <div class="chat-container" id="chatContainer">
             <div class="welcome-container" id="welcomeContainer">
@@ -1093,6 +1176,12 @@
             const prismThemeLink = document.getElementById('prismTheme');
             const toastNotification = document.getElementById('toastNotification');
             const toastMessage = document.getElementById('toastMessage');
+            // NEW: Model Warning Elements
+            const modelWarningBanner = document.getElementById('modelWarningBanner');
+            const unavailableModelNameSpan = document.getElementById('unavailableModelName');
+            const warningChangeModelBtn = document.getElementById('warningChangeModelBtn');
+            const warningCloseBtn = document.getElementById('warningCloseBtn');
+
 
             // --- Application State ---
             let currentChatId = null;
@@ -1144,7 +1233,9 @@
                 processedContent = processedContent.replace(/^```(\w*)\n([\s\S]*?)\n```$/gm, (match, lang, code) => {
                     const safeLang = escapeHtml(lang.trim().toLowerCase() || 'plaintext');
                     const languageClass = `language-${safeLang}`;
-                    const escapedCode = escapeHtml(code);
+                    // Double escape HTML within code for display
+                    //const escapedCode = escapeHtml(code); // Standard escape
+                     const escapedCode = escapeHtml(code); // Escape HTML entities within the code block
                     const blockHtml = `<pre class="${languageClass}"><code class="${languageClass}">${escapedCode}</code></pre>`;
                     const placeholder = `%%CODEBLOCK_${codeBlocks.length}%%`;
                     codeBlocks.push(blockHtml);
@@ -1157,51 +1248,62 @@
                 let currentParagraph = '';
 
                 function applyInlineFormatting(escapedText) {
-                    let formattedText = escapedText.replace(/\*\*(.+?)\*\*|__(.+?)__/g, (match, p1, p2) => `<strong>${p1 || p2}</strong>`);
-                    formattedText = formattedText.replace(/\*(.+?)\*|_(.+?)_/g, (match, p1, p2) => `<em>${p1 || p2}</em>`);
+                    let formattedText = escapedText.replace(/\*\*(.+?)\*\*|__(.+?)__/g, (match, p1, p2) => `<strong>${escapeHtml(p1 || p2)}</strong>`);
+                    formattedText = formattedText.replace(/\*(.+?)\*|_(.+?)_/g, (match, p1, p2) => `<em>${escapeHtml(p1 || p2)}</em>`);
+                    // Add inline code support
+                    formattedText = formattedText.replace(/`([^`]+)`/g, (match, p1) => `<code>${escapeHtml(p1)}</code>`);
                     return formattedText;
                 }
+
 
                 lines.forEach(line => {
                     const placeholderMatch = line.match(/^%%CODEBLOCK_(\d+)%%$/);
                     if (placeholderMatch) {
+                        // If there's an ongoing paragraph, close it first
                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                         }
                         const index = parseInt(placeholderMatch[1], 10);
                         if (index >= 0 && index < codeBlocks.length) {
+                             // Code block HTML is already escaped and formatted
                             formattedHtml += codeBlocks[index] + '\n';
                         } else {
+                             // Fallback: treat placeholder line as plain text if index is invalid
                              formattedHtml += `<p>${escapeHtml(line)}</p>\n`;
                         }
-                        return;
+                        return; // Move to the next line
                     }
 
                     const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
                     if (headingMatch) {
-                        if (currentParagraph) {
+                         if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
-                        }
+                         }
                         const level = headingMatch[1].length;
                         const headingText = escapeHtml(headingMatch[2].trim());
                         const formattedHeadingText = applyInlineFormatting(headingText);
                         formattedHtml += `<h${level}>${formattedHeadingText}</h${level}>\n`;
                     }
                     else if (line.trim() === '') {
+                         // If it's a blank line and we have a paragraph, end it
                          if (currentParagraph) {
                             formattedHtml += `<p>${currentParagraph}</p>\n`;
                             currentParagraph = '';
                          }
+                         // Add an empty paragraph for spacing? Optional. Usually handled by CSS margins.
+                         // formattedHtml += '<p></p>\n';
                     }
-                    else if (line.trim() !== '') {
+                    else { // Non-empty, non-heading, non-codeblock line
                         const escapedLine = escapeHtml(line);
                         const formattedLine = applyInlineFormatting(escapedLine);
+                        // Add to current paragraph, using <br> for line breaks within the paragraph
                         currentParagraph += (currentParagraph ? '<br>' : '') + formattedLine;
                     }
                 });
 
+                // Add any remaining paragraph content
                 if (currentParagraph) {
                     formattedHtml += `<p>${currentParagraph}</p>\n`;
                 }
@@ -1209,24 +1311,25 @@
                 return formattedHtml.trim();
             }
 
+
              /**
-             * Shows a toast notification.
-             * @param {string} message The message to display.
-             * @param {boolean} [isError=false] If true, display as an error toast.
-             * @param {number} [duration=2500] Duration in milliseconds.
-             */
-            function showToast(message, isError = false, duration = 2500) {
-                if (toastTimeout) {
-                    clearTimeout(toastTimeout);
-                }
-                toastMessage.textContent = message;
-                toastNotification.classList.toggle('error', isError);
-                toastNotification.classList.add('visible');
-                toastTimeout = setTimeout(() => {
-                    toastNotification.classList.remove('visible');
-                    toastTimeout = null;
-                }, duration);
-            }
+              * Shows a toast notification.
+              * @param {string} message The message to display.
+              * @param {boolean} [isError=false] If true, display as an error toast.
+              * @param {number} [duration=2500] Duration in milliseconds.
+              */
+             function showToast(message, isError = false, duration = 2500) {
+                 if (toastTimeout) {
+                     clearTimeout(toastTimeout);
+                 }
+                 toastMessage.textContent = message;
+                 toastNotification.classList.toggle('error', isError);
+                 toastNotification.classList.add('visible');
+                 toastTimeout = setTimeout(() => {
+                     toastNotification.classList.remove('visible');
+                     toastTimeout = null;
+                 }, duration);
+             }
 
             // --- Initialization ---
             loadTheme();
@@ -1278,18 +1381,30 @@
             // Mobile navigation
             mobileToggle.addEventListener('click', toggleSidebar);
             mainContent.addEventListener('click', (event) => {
-                 if (body.classList.contains('sidebar-open') && event.target === mainContent) {
+                 // Close sidebar if clicking overlay
+                 if (body.classList.contains('sidebar-open') && event.target.classList.contains('main-content')) {
                      toggleSidebar();
                  }
+                 // Close settings panel if clicking outside
                   if (settingsPanel.classList.contains('open') && !settingsBtn.contains(event.target) && !settingsPanel.contains(event.target) ) {
                      closeSettingsPanel();
-                 }
+                  }
                  // Close rename input if clicking outside of it while renaming
                  const renameInput = chatTitleContainer.querySelector('.rename-chat-input');
-                 if (isRenaming && renameInput && !renameInput.contains(event.target)) {
+                 if (isRenaming && renameInput && !renameInput.contains(event.target) && !chatTitleText.contains(event.target)) {
                      // Trigger the blur event handler manually to save/cancel
                      renameInput.blur();
                  }
+            });
+
+            // NEW: Model Warning Banner Listeners
+            warningChangeModelBtn.addEventListener('click', () => {
+                openSettings();
+                // Optional: Hide warning immediately? Decided against it for now.
+            });
+
+            warningCloseBtn.addEventListener('click', () => {
+                hideModelWarning();
             });
 
 
@@ -1301,14 +1416,19 @@
 
                 body.classList.toggle('light-theme', isLight);
                 themeToggle.innerHTML = isLight ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-                // CSS variables handle theme switching for code blocks now
+
+                // Update Prism theme based on body class
+                const prismHref = isLight
+                    ? "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" // Default light
+                    : "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css"; // Okaidia dark
+                prismThemeLink.setAttribute('href', prismHref);
             }
 
             function toggleTheme() {
                 body.classList.toggle('light-theme');
                 const isLight = body.classList.contains('light-theme');
                 localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                loadTheme(); // Reload to apply all changes
+                loadTheme(); // Reload to apply all changes including Prism theme
             }
 
             function fetchModelsAndSetup() {
@@ -1326,21 +1446,7 @@
                          console.log("Models loaded:", modelsData);
                          populateModelSelectionModal();
                          if (!chatSettings.model) {
-                             const firstProviderKey = Object.keys(modelsData)[0];
-                             if (firstProviderKey) {
-                                 const providerModels = modelsData[firstProviderKey];
-                                 const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider');
-                                 if (firstModelKey) {
-                                     const modelInfo = providerModels[firstModelKey];
-                                     const categoryProvider = providerModels.provider;
-                                     const actualProvider = modelInfo.provider || categoryProvider;
-                                     chatSettings.modelKey = firstModelKey;
-                                     chatSettings.model = modelInfo.model;
-                                     chatSettings.provider = actualProvider;
-                                     chatSettings.thinkingModel = modelInfo.thinking_model || null;
-                                     chatSettings.thinkingMode = false;
-                                 }
-                             }
+                             setInitialDefaultModel();
                          }
                          updateSettingsUI();
                          loadChats(); // Load chats *after* models and default settings are ready
@@ -1351,9 +1457,30 @@
                         selectModelBtn.disabled = true;
                         modelModalContent.innerHTML = `<p style="text-align: center; color: var(--error-color); padding: 20px 0;">${escapeHtml(error.message)}</p>`;
                         chatList.innerHTML = `<div class="chat-item" style="color: var(--error-color);"><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки чатов</div>`;
-                        createNewChat();
-                        updateSettingsUI();
+                        // Don't create a new chat here, let loadChats handle the empty state
+                        loadChats(); // Still try to load chats, will likely result in new chat state
+                        updateSettingsUI(); // Update UI to reflect error state
                     });
+            }
+
+            function setInitialDefaultModel() {
+                // Sets the default model if none is set in chatSettings
+                if (!modelsData) return;
+                const firstProviderKey = Object.keys(modelsData)[0];
+                 if (firstProviderKey) {
+                     const providerModels = modelsData[firstProviderKey];
+                     const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider');
+                     if (firstModelKey) {
+                         const modelInfo = providerModels[firstModelKey];
+                         const categoryProvider = providerModels.provider;
+                         const actualProvider = modelInfo.provider || categoryProvider;
+                         chatSettings.modelKey = firstModelKey;
+                         chatSettings.model = modelInfo.model;
+                         chatSettings.provider = actualProvider;
+                         chatSettings.thinkingModel = modelInfo.thinking_model || null;
+                         chatSettings.thinkingMode = false; // Default thinking mode to false
+                     }
+                 }
             }
 
             function populateModelSelectionModal() {
@@ -1404,16 +1531,19 @@
                              chatSettings.provider = actualProvider;
                              chatSettings.thinkingModel = thinkingModel;
 
-                             updateSettingsUI();
-                             toggleModal(modelSelectionModal, false);
-                             updateModelSelectionActiveState();
-
-                             updateThinkingModeAvailability();
-                             if (thinkingModeToggle.disabled) {
+                             // IMPORTANT: Reset thinking mode if the new model doesn't support it
+                             if (!thinkingModel) {
                                  chatSettings.thinkingMode = false;
-                                 thinkingModeToggle.checked = false;
                              }
-                             saveCurrentChatState();
+                             hideModelWarning();
+                             updateSettingsUI(); // Update settings panel display
+                             toggleModal(modelSelectionModal, false); // Close modal
+                             updateModelSelectionActiveState(); // Update visual selection in modal
+
+                             updateThinkingModeAvailability(); // Enable/disable switch based on new model
+                             // No need to update thinkingModeToggle.checked here, updateSettingsUI handles it
+
+                             saveCurrentChatState(); // Save the new model selection to the current chat
                          });
                          contentDiv.appendChild(modelItem);
                      });
@@ -1434,10 +1564,19 @@
             }
 
              function updateModelSelectionActiveState() {
+                 if (!modelModalContent) return;
                  modelModalContent.querySelectorAll('.model-item.active').forEach(el => el.classList.remove('active'));
                  const currentModelItem = modelModalContent.querySelector(`.model-item[data-model-key="${chatSettings.modelKey}"]`);
                  if (currentModelItem) {
                      currentModelItem.classList.add('active');
+                     // Ensure the category is open if the active item is inside
+                     const categoryContent = currentModelItem.closest('.category-content');
+                     const categoryHeader = categoryContent?.previousElementSibling;
+                      if (categoryContent && categoryHeader && !categoryContent.classList.contains('open')) {
+                         categoryContent.classList.add('open');
+                         categoryHeader.classList.add('open');
+                         categoryHeader.setAttribute('aria-expanded', 'true');
+                     }
                  }
              }
 
@@ -1465,8 +1604,8 @@
 
                 maxTokens.value = chatSettings.maxTokens;
                 temperature.value = chatSettings.temperature;
-                thinkingModeToggle.checked = chatSettings.thinkingMode;
-                updateThinkingModeAvailability();
+                thinkingModeToggle.checked = chatSettings.thinkingMode; // Reflect current state
+                updateThinkingModeAvailability(); // Set disabled state and potentially uncheck
             }
 
             function handleInput() {
@@ -1488,6 +1627,7 @@
                 const scrollHeight = messageInput.scrollHeight;
                 const maxHeightStyle = window.getComputedStyle(messageInput).maxHeight;
                 const maxHeight = parseInt(maxHeightStyle) || 200;
+                // Add a small buffer (e.g., 2px) to prevent scrollbar flicker in some browsers
                 const heightWithBuffer = scrollHeight + 2;
                 const newHeight = Math.min(heightWithBuffer, maxHeight);
                 messageInput.style.height = newHeight + 'px';
@@ -1497,14 +1637,17 @@
             function toggleSidebar() {
                 sidebar.classList.toggle('open');
                 body.classList.toggle('sidebar-open', sidebar.classList.contains('open'));
-                mainContent.classList.toggle('overlay-active', sidebar.classList.contains('open'));
+                // The overlay effect is handled by CSS pseudo-element on main-content now
             }
 
             function sendMessage() {
                 const messageContent = messageInput.value.trim();
                 if (!messageContent) return;
                 if (!modelsData || !chatSettings.model) {
-                    addMessageToDOM('assistant', "Ошибка: Невозможно отправить сообщение. Проверьте настройки модели.", Date.now() + "-error", true);
+                    // Check if the error is due to models not loading vs. just no model selected
+                    const errorMsg = modelsData ? "Ошибка: Модель не выбрана. Пожалуйста, выберите модель в настройках." : "Ошибка: Невозможно отправить сообщение. Данные моделей не загружены.";
+                    addMessageToDOM('assistant', errorMsg, Date.now() + "-error", true);
+                    showToast(errorMsg, true, 4000);
                     return;
                 }
 
@@ -1520,8 +1663,10 @@
 
                 let isNewChat = false;
                 if (currentChatId === null) {
-                    createNewChatEntry(messageContent);
+                    createNewChatEntry(messageContent); // This sets currentChatId
                     isNewChat = true;
+                } else {
+                    saveCurrentChatState(); // Save the user message immediately in existing chat
                 }
 
                 const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
@@ -1553,10 +1698,12 @@
                     if (!response.ok) {
                         return response.json()
                             .catch(() => {
+                                // If parsing JSON fails, throw error with status text
                                 throw new Error(`HTTP error ${response.status} - ${response.statusText}`);
                             })
                             .then(errData => {
-                                const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
+                                // Try to get a specific error message from the JSON body
+                                const errorMessage = errData?.error?.message || errData?.error || errData?.detail || `HTTP error ${response.status}`;
                                 throw new Error(errorMessage);
                             });
                     }
@@ -1572,9 +1719,10 @@
                         addMessageToDOM('assistant', data.response, assistantMessageId);
                         saveCurrentChatState(); // Save after successful response
                     } else {
-                        const errorMsg = data?.error || data?.detail || "Ответ от API не содержит ожидаемых данных.";
+                        const errorMsg = data?.error?.message || data?.error || data?.detail || "Ответ от API не содержит ожидаемых данных.";
                         console.error("API Error or Unexpected Response:", errorMsg, data);
                         addMessageToDOM('assistant', `Произошла ошибка API: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror", true);
+                        // Don't save history on API error? Or save the error message? Current approach: don't save error.
                     }
                 })
                 .catch(error => {
@@ -1584,7 +1732,7 @@
                     addMessageToDOM('assistant', `Ошибка сети или сервера: ${escapeHtml(displayError)}`, Date.now() + "-fetcherror", true);
                 })
                 .finally(() => {
-                    updateLastMessageControls();
+                    updateLastMessageControls(); // Ensure controls (like regenerate) are updated
                 });
             }
 
@@ -1604,40 +1752,50 @@
                  if (welcome) welcome.style.display = 'none';
 
                  const messageDiv = document.createElement('div');
-                 messageDiv.dataset.id = String(id);
+                 messageDiv.dataset.id = String(id); // Ensure ID is string for dataset
                  messageDiv.classList.add('message', `${role}-message`);
                  if (isError) {
                     messageDiv.classList.add('error-message');
                  }
 
-                 if (role === 'user' || isError) {
+                 // Determine content based on role and type
+                 if (role === 'user' || (role === 'assistant' && isError)) {
+                     // User messages and explicit error messages are treated as plain text
                      messageDiv.textContent = rawContent;
                  } else if (role === 'assistant' && isTemp) {
-                     messageDiv.innerHTML = rawContent; // Assume safe HTML for temp messages like loader
-                 } else if (role === 'assistant' && !isTemp) {
-                     const safeFormattedHtml = formatAssistantMessage(rawContent);
-                     messageDiv.innerHTML = safeFormattedHtml;
-                     try {
-                         messageDiv.querySelectorAll('pre code[class*="language-"]').forEach((block) => {
-                            // Check if already highlighted by checking parent 'pre'
-                            if (!block.parentNode.classList.contains('prism-highlighted')) {
-                                Prism.highlightElement(block);
-                                block.parentNode.classList.add('prism-highlighted'); // Mark as highlighted
-                            }
-                         });
-                     } catch (highlightError) {
-                         console.warn("Prism highlighting failed:", highlightError);
-                     }
+                     // Temporary messages (like loader) assume safe HTML
+                     messageDiv.innerHTML = rawContent;
+                 } else if (role === 'assistant') {
+                      // Regular assistant messages go through formatting and highlighting
+                      const safeFormattedHtml = formatAssistantMessage(rawContent);
+                      messageDiv.innerHTML = safeFormattedHtml;
+                      // Highlight code blocks after content is added
+                      try {
+                          // Use Prism.highlightAllUnder(container) for efficiency if adding multiple blocks?
+                          // Or stick to individual highlighting:
+                          messageDiv.querySelectorAll('pre code[class*="language-"]').forEach((block) => {
+                              // Check if already highlighted by checking parent 'pre' for a class Prism might add
+                              // Using a custom class is more reliable
+                              if (!block.parentNode.classList.contains('prism-highlighted')) {
+                                  Prism.highlightElement(block);
+                                  block.parentNode.classList.add('prism-highlighted'); // Mark as highlighted
+                              }
+                          });
+                      } catch (highlightError) {
+                          console.warn("Prism highlighting failed:", highlightError);
+                          // Continue rendering the message even if highlighting fails
+                      }
                  }
 
-                 // Add controls only for non-temporary messages that are part of history
-                 // Convert id to string for comparison robustness
-                 if (!isTemp && chatHistory.some(msg => String(msg.id) === String(id))) {
+                 // Add controls only for non-temporary messages that are part of the *current* chat history
+                 // This prevents adding controls to messages loaded just for display (though currently all displayed messages are in history)
+                 if (!isTemp && chatHistory && chatHistory.some(msg => String(msg.id) === String(id))) {
                     const controlsDiv = createMessageControls(id, role);
                     messageDiv.appendChild(controlsDiv);
                  }
 
                  chatContainer.appendChild(messageDiv);
+                 // Scroll to bottom smoothly after a short delay to allow rendering
                  setTimeout(() => {
                      chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
                  }, 50);
@@ -1648,8 +1806,9 @@
                  if (messageElement) {
                      messageElement.remove();
                  }
+                 // If the chat container is now empty (or only has the welcome message), show the welcome message
                  if (chatContainer.children.length === 0 || (chatContainer.children.length === 1 && chatContainer.firstElementChild.id === 'welcomeContainer')) {
-                     displayWelcomeMessage();
+                     displayWelcomeMessage(true); // Force display welcome message
                  }
             }
 
@@ -1657,18 +1816,18 @@
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'message-controls';
 
-                // Copy Button
+                // Copy Button (always add for user and assistant)
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'control-btn copy-btn';
                 copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
                 copyBtn.title = 'Копировать';
                 copyBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Prevent triggering message hover/focus events
                     copyMessageContent(messageId, copyBtn);
                 });
                 controlsDiv.appendChild(copyBtn);
 
-                // Delete Button
+                // Delete Button (always add)
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'control-btn delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
@@ -1678,6 +1837,8 @@
                     confirmDeleteHandler(messageId);
                 });
                 controlsDiv.appendChild(deleteBtn);
+
+                // Regenerate button is added dynamically by updateLastMessageControls()
 
                 return controlsDiv;
             }
@@ -1689,6 +1850,7 @@
               */
               function copyMessageContent(messageId, copyBtnElement) {
                  const messageIdStr = String(messageId);
+                 // Find the message in the *current* chatHistory
                  const message = chatHistory.find(msg => String(msg.id) === messageIdStr);
 
                  if (message?.content) {
@@ -1697,13 +1859,12 @@
                              showToast("Сообщение скопировано");
                              const icon = copyBtnElement.querySelector('i');
                              if (icon) {
-                                 icon.classList.remove('fa-copy');
-                                 icon.classList.add('fa-check');
+                                 const originalClasses = Array.from(icon.classList); // Store original
+                                 icon.className = 'fas fa-check'; // Change to check
                                  setTimeout(() => {
-                                     // Check if the icon is still the checkmark before changing back
+                                     // Check if the icon still exists and is a checkmark before changing back
                                      if(copyBtnElement.contains(icon) && icon.classList.contains('fa-check')) {
-                                         icon.classList.remove('fa-check');
-                                         icon.classList.add('fa-copy');
+                                         icon.className = originalClasses.join(' '); // Restore original
                                      }
                                  }, 1500);
                              }
@@ -1713,7 +1874,7 @@
                              showToast("Не удалось скопировать текст", true);
                          });
                  } else {
-                      console.warn("Could not find message in history to copy:", messageIdStr);
+                      console.warn("Could not find message in current history to copy:", messageIdStr);
                       showToast("Сообщение не найдено в истории", true);
                  }
              }
@@ -1725,31 +1886,39 @@
 
             function deleteMessageHandler() {
                 if (messageToDelete === null) return;
-                const messageIdStr = String(messageToDelete);
+                const messageIdStr = String(messageToDelete); // Ensure string comparison
 
                 const indexToDelete = chatHistory.findIndex(msg => String(msg.id) === messageIdStr);
 
                 if (indexToDelete !== -1) {
+                     // Remove from history first
                      chatHistory.splice(indexToDelete, 1);
+                     // Then remove from DOM
                      removeMessageFromDOM(messageIdStr);
+                     // Save the updated state
                      saveCurrentChatState();
                      console.log(`Message ${messageIdStr} deleted.`);
+                     // Update controls (e.g., regenerate button might need adding/removing)
                      updateLastMessageControls();
+                     // If history is now empty, show welcome message
                      if (chatHistory.length === 0) {
-                          displayWelcomeMessage(true);
+                          displayWelcomeMessage(true); // Force display
                      }
                 } else {
+                     // If not found in history, still try to remove from DOM (might be an orphaned element)
                      console.warn("Message to delete not found in history:", messageIdStr);
-                     removeMessageFromDOM(messageIdStr); // Still try to remove from DOM
+                     removeMessageFromDOM(messageIdStr);
                      updateLastMessageControls();
-                     if (chatHistory.length === 0) displayWelcomeMessage(true);
+                      if (chatHistory.length === 0 && chatContainer.children.length <= 1) { // Check DOM too
+                          displayWelcomeMessage(true);
+                     }
                 }
 
-                messageToDelete = null;
+                messageToDelete = null; // Reset state
                 toggleModal(deleteModal, false); // Close message delete modal
             }
 
-            // --- NEW: Chat Deletion ---
+            // --- Chat Deletion ---
             function confirmChatDeleteHandler(chatId, chatTitle) {
                 chatToDeleteId = chatId;
                 chatToDeleteTitle.textContent = `"${chatTitle || 'Без названия'}"`; // Show title in modal
@@ -1764,24 +1933,23 @@
                 if (indexToDelete !== -1) {
                     const deletedChatId = chatToDeleteId; // Store before resetting
                     chats.splice(indexToDelete, 1);
-                    saveChats();
-                    renderChatList(); // Update sidebar
+                    saveChats(); // Save the updated list
+                    renderChatList(); // Update sidebar display
 
                     // Determine what to load next
                     if (currentChatId === deletedChatId) {
                         // If the active chat was deleted, load the next one or create new
+                        hideModelWarning(); // Hide warning from the deleted chat
                         if (chats.length > 0) {
-                            // Load the first chat in the updated list (which is the newest)
+                            // Load the first chat in the updated list (newest)
                             loadChat(chats[0].id);
                         } else {
                             // No chats left, create a new one
                             createNewChat();
                         }
                     } else {
-                        // If a non-active chat was deleted, the current view remains,
-                        // but we might need to re-render the list to remove the active highlight
-                        // if the currently active chat was somehow affected (shouldn't happen here)
-                        // renderChatList() already handles highlighting based on currentChatId
+                        // If a non-active chat was deleted, the current view remains the same.
+                        // renderChatList() already handled updating the sidebar.
                     }
 
                     showToast("Чат удален");
@@ -1790,7 +1958,7 @@
                     showToast("Ошибка: Чат для удаления не найден.", true);
                 }
 
-                chatToDeleteId = null;
+                chatToDeleteId = null; // Reset state
                 chatToDeleteTitle.textContent = '';
                 toggleModal(deleteChatModal, false); // Close chat delete modal
             }
@@ -1799,34 +1967,38 @@
 
             function regenerateMessageHandler(assistantMessageId) {
                  const assistantMsgIdStr = String(assistantMessageId);
-                 const assistantMsgIndex = chatHistory.findIndex(msg => String(msg.id) === assistantMsgIdStr && msg.role === 'assistant');
-
-                 if (assistantMsgIndex === -1 || assistantMsgIndex !== chatHistory.length - 1) {
-                      showToast("Можно регенерировать только последний ответ.", true);
-                      return;
+                 // Ensure the message to regenerate is the *very last* message in the history
+                 if (chatHistory.length === 0 || String(chatHistory[chatHistory.length - 1].id) !== assistantMsgIdStr) {
+                     showToast("Можно регенерировать только последний ответ.", true);
+                     return;
                  }
-                 if (chatHistory.length < 1) return;
 
+                 // Remove the last assistant message from history and DOM
                  const messageToRemove = chatHistory.pop();
                  removeMessageFromDOM(messageToRemove.id);
-                 saveCurrentChatState(); // Save without the message
+                 saveCurrentChatState(); // Save state without the last message
 
+                  // If history is now empty, display welcome and stop
                   if (chatHistory.length === 0) {
                      displayWelcomeMessage(true);
                      return;
                  }
 
+                 // Prepare payload with the remaining messages
                  const messagesPayload = chatHistory.map(msg => ({ role: msg.role, content: msg.content }));
 
+                 // Determine model to use (respecting thinking mode)
                  let effectiveModelId = chatSettings.model;
                  let effectiveProvider = chatSettings.provider;
                  if (chatSettings.thinkingMode && chatSettings.thinkingModel) {
                     effectiveModelId = chatSettings.thinkingModel;
                  }
 
+                 // Show loading indicator
                  const loadingMsgId = Date.now() + "-loading-regen";
                  addMessageToDOM('assistant', '<div class="loader"></div> Регенерируем ответ...', loadingMsgId, false, true);
 
+                 // Make API call
                  fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -1838,12 +2010,12 @@
                         temperature: chatSettings.temperature
                     })
                  })
-                 .then(response => {
+                 .then(response => { // Identical error handling as sendMessage
                      if (!response.ok) {
                          return response.json()
                             .catch(() => { throw new Error(`HTTP error ${response.status} - ${response.statusText}`); })
                             .then(errData => {
-                                const errorMessage = errData.error || errData.detail || `HTTP error ${response.status}`;
+                                const errorMessage = errData?.error?.message || errData?.error || errData?.detail || `HTTP error ${response.status}`;
                                 throw new Error(errorMessage);
                              });
                      }
@@ -1854,48 +2026,45 @@
                      if (data && data.response) {
                          const newAssistantMessageId = Date.now() + "-assistant-regen";
                          const newAssistantMessage = { role: 'assistant', content: data.response, id: newAssistantMessageId };
-                         chatHistory.push(newAssistantMessage);
+                         chatHistory.push(newAssistantMessage); // Add new response to history
                          addMessageToDOM('assistant', data.response, newAssistantMessageId);
-                         saveCurrentChatState();
+                         saveCurrentChatState(); // Save the new state
                      } else {
-                         const errorMsg = data?.error || data?.detail || "Ответ от API при регенерации не содержит ожидаемых данных.";
+                         // Handle API error during regeneration
+                         const errorMsg = data?.error?.message || data?.error || data?.detail || "Ответ от API при регенерации не содержит ожидаемых данных.";
+                         console.error("API Error during regeneration:", errorMsg, data);
                          addMessageToDOM('assistant', `Ошибка API при регенерации: ${escapeHtml(errorMsg)}`, Date.now() + "-apierror-regen", true);
-                         // Re-add the original message to history if regeneration failed? Maybe not, keep state simple.
-                         // chatHistory.push(messageToRemove); // Re-add original if needed
-                         // saveCurrentChatState();
+                         // Decide whether to re-add the original message or leave it deleted
+                         // Current: Leave it deleted, show error. User can try again or delete error.
                      }
                  })
                  .catch(error => {
                      console.error("Ошибка при регенерации:", error);
                      removeMessageFromDOM(loadingMsgId);
-                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${escapeHtml(error.message)}`, Date.now() + "-fetcherror-regen", true);
+                     const displayError = error instanceof Error ? error.message : String(error);
+                     addMessageToDOM('assistant', `Ошибка сети или сервера при регенерации: ${escapeHtml(displayError)}`, Date.now() + "-fetcherror-regen", true);
                  })
                  .finally(() => {
-                     updateLastMessageControls();
+                     updateLastMessageControls(); // Update controls after regeneration attempt
                  });
             }
 
             function updateLastMessageControls() {
-                 // Remove any existing regenerate buttons first
+                 // Remove any existing regenerate buttons first to avoid duplicates
                  chatContainer.querySelectorAll('.regenerate-btn').forEach(btn => btn.remove());
 
-                 const messageElements = chatContainer.querySelectorAll('.message:not([data-id*="-loading"])');
-                 if (messageElements.length === 0) return; // No messages, nothing to do
+                 // Only proceed if there's history
+                 if (!chatHistory || chatHistory.length === 0) return;
 
-                 const lastMessageElement = messageElements[messageElements.length - 1];
+                 const lastMessageInHistory = chatHistory[chatHistory.length - 1];
 
-                 // Find the corresponding message data in history
-                 const lastMessageId = lastMessageElement.dataset.id;
-                 const lastMessageData = chatHistory.find(msg => String(msg.id) === lastMessageId);
+                 // Find the corresponding DOM element for the last message in history
+                 const lastMessageElement = chatContainer.querySelector(`.message[data-id="${lastMessageInHistory.id}"]`);
 
-                 // Add regenerate button ONLY if the last DOM element corresponds to the last assistant message in history
-                 if (lastMessageData &&
-                     lastMessageData.role === 'assistant' &&
-                     chatHistory.length > 0 &&
-                     String(chatHistory[chatHistory.length - 1].id) === lastMessageId)
-                 {
+                 // Add regenerate button ONLY if the last message is from the assistant
+                 if (lastMessageElement && lastMessageInHistory.role === 'assistant') {
                      let controlsDiv = lastMessageElement.querySelector('.message-controls');
-                     // Ensure controls div exists (it should for history messages)
+                     // Ensure controls div exists (should always exist for history messages now)
                      if (controlsDiv) {
                          const regenerateBtn = document.createElement('button');
                          regenerateBtn.className = 'control-btn regenerate-btn';
@@ -1903,23 +2072,26 @@
                          regenerateBtn.title = 'Регенерировать ответ';
                          regenerateBtn.addEventListener('click', (e) => {
                              e.stopPropagation();
-                             regenerateMessageHandler(lastMessageId);
+                             regenerateMessageHandler(lastMessageInHistory.id);
                          });
 
-                         // Add the regenerate button before the delete button if possible
+                         // Add the regenerate button (e.g., before the delete button)
                          const deleteBtn = controlsDiv.querySelector('.delete-btn');
                          if (deleteBtn) {
                              controlsDiv.insertBefore(regenerateBtn, deleteBtn);
                          } else {
-                             // If delete somehow doesn't exist, just append
+                             // Fallback: just append if delete button isn't found
                              controlsDiv.appendChild(regenerateBtn);
                          }
+                     } else {
+                         // This case should ideally not happen if controls are added correctly
+                         console.warn("Could not find controls div for the last message:", lastMessageInHistory.id);
                      }
                  }
-             }
+            }
 
             function openSettings() {
-                updateSettingsUI();
+                updateSettingsUI(); // Ensure settings panel shows current chat's settings
                 settingsPanel.classList.add('open');
             }
 
@@ -1928,101 +2100,129 @@
             }
 
             function saveSettingsHandler() {
-                const newMaxTokens = parseInt(maxTokens.value);
-                const newTemperature = parseFloat(temperature.value);
+                 let settingsChanged = false;
+                 let showValidationError = false;
 
-                if (!isNaN(newMaxTokens) && newMaxTokens >= parseInt(maxTokens.min) && newMaxTokens <= parseInt(maxTokens.max)) {
-                    chatSettings.maxTokens = newMaxTokens;
-                } else {
-                    maxTokens.value = chatSettings.maxTokens;
-                    showToast(`Неверное значение токенов (допустимо ${maxTokens.min}-${maxTokens.max})`, true);
-                }
-
-                if (!isNaN(newTemperature) && newTemperature >= parseFloat(temperature.min) && newTemperature <= parseFloat(temperature.max)) {
-                    chatSettings.temperature = newTemperature;
-                } else {
-                    temperature.value = chatSettings.temperature;
-                     showToast(`Неверное значение температуры (допустимо ${temperature.min}-${temperature.max})`, true);
-                }
-
-                 if (!thinkingModeToggle.disabled) {
-                     chatSettings.thinkingMode = thinkingModeToggle.checked;
+                 // Validate and update Max Tokens
+                 const newMaxTokens = parseInt(maxTokens.value);
+                 if (!isNaN(newMaxTokens) && newMaxTokens >= parseInt(maxTokens.min) && newMaxTokens <= parseInt(maxTokens.max)) {
+                     if (chatSettings.maxTokens !== newMaxTokens) {
+                         chatSettings.maxTokens = newMaxTokens;
+                         settingsChanged = true;
+                     }
                  } else {
-                     chatSettings.thinkingMode = false; // Ensure it's false if disabled
+                     maxTokens.value = chatSettings.maxTokens; // Revert invalid input
+                     showToast(`Неверное значение токенов (допустимо ${maxTokens.min}-${maxTokens.max})`, true);
+                     showValidationError = true;
                  }
 
-                 saveCurrentChatState();
-                 showToast("Настройки сохранены");
+                 // Validate and update Temperature
+                 const newTemperature = parseFloat(temperature.value);
+                 if (!isNaN(newTemperature) && newTemperature >= parseFloat(temperature.min) && newTemperature <= parseFloat(temperature.max)) {
+                     // Use a threshold for float comparison to avoid minor precision issues triggering save
+                     if (Math.abs(chatSettings.temperature - newTemperature) > 0.001) {
+                         chatSettings.temperature = newTemperature;
+                         settingsChanged = true;
+                     }
+                 } else {
+                     temperature.value = chatSettings.temperature; // Revert invalid input
+                     showToast(`Неверное значение температуры (допустимо ${temperature.min}-${temperature.max})`, true);
+                     showValidationError = true;
+                 }
+
+                 // Update Thinking Mode (only if enabled)
+                 if (!thinkingModeToggle.disabled) {
+                     const newThinkingMode = thinkingModeToggle.checked;
+                     if (chatSettings.thinkingMode !== newThinkingMode) {
+                         chatSettings.thinkingMode = newThinkingMode;
+                         settingsChanged = true;
+                     }
+                 } else {
+                      // Ensure thinkingMode is false if the toggle is disabled
+                      if (chatSettings.thinkingMode) {
+                          chatSettings.thinkingMode = false;
+                          settingsChanged = true; // Mark as changed if it was previously true
+                      }
+                 }
+
+                 // Note: Model selection is saved when the model is clicked in the modal,
+                 // but we save the *entire* chatSettings object here to capture any changes.
+
+                 if (settingsChanged) {
+                     saveCurrentChatState(); // Save the updated settings to the chat data
+                     showToast("Настройки сохранены");
+                 } else if (!showValidationError) {
+                     // No changes and no errors, maybe show a subtle confirmation or do nothing
+                     // showToast("Настройки не изменились");
+                 }
+
+                 // Always close panel and update UI after attempting save
                  closeSettingsPanel();
-                 updateSettingsUI(); // Refresh UI just in case validation changed values
+                 updateSettingsUI(); // Refresh UI (in case validation reverted values)
+
+                 // --- Re-check model availability after potential changes ---
+                 if (chatSettings.modelKey && modelsData) {
+                     if (isModelKeyAvailable(chatSettings.modelKey)) {
+                         hideModelWarning(); // Hide warning if the current model is now valid
+                     } else {
+                         // Model *still* not available (or user didn't change it)
+                         showModelWarning(chatSettings.modelKey); // Ensure warning is visible
+                     }
+                 } else {
+                     // No model key set, or models not loaded - hide warning
+                     hideModelWarning();
+                 }
             }
 
             function updateThinkingModeAvailability() {
                  const modelSupportsThinking = !!chatSettings.thinkingModel;
                  thinkingModeContainer.classList.toggle('disabled', !modelSupportsThinking);
                  thinkingModeToggle.disabled = !modelSupportsThinking;
+
+                 // If the model doesn't support thinking mode, ensure the toggle is off and state is false
                  if (!modelSupportsThinking && thinkingModeToggle.checked) {
-                     // If model doesn't support it, uncheck and update state
                      thinkingModeToggle.checked = false;
-                     chatSettings.thinkingMode = false;
-                 }
-                 else if (modelSupportsThinking) {
-                    // If model supports it, ensure checkbox reflects current state
-                    thinkingModeToggle.checked = chatSettings.thinkingMode;
+                     chatSettings.thinkingMode = false; // Update state directly
                  }
             }
 
             function createNewChat() {
+                hideModelWarning(); // Hide any model warning from previous chat
                 currentChatId = null;
                 chatHistory = [];
-                displayWelcomeMessage(true);
+                displayWelcomeMessage(true); // Force display welcome message
                 chatTitleText.textContent = 'Новый чат';
                 chatTitleText.title = 'Двойной клик для переименования'; // Reset title attribute
 
+                // Remove active class from sidebar
                 document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
 
-                // Reset settings to defaults based on the first available model
-                if (modelsData && Object.keys(modelsData).length > 0) {
-                     const firstProviderKey = Object.keys(modelsData)[0];
-                     const providerModels = modelsData[firstProviderKey];
-                     const firstModelKey = Object.keys(providerModels).find(key => key !== 'provider');
-                     if (firstModelKey) {
-                         const modelInfo = providerModels[firstModelKey];
-                         const categoryProvider = providerModels.provider;
-                         const actualProvider = modelInfo.provider || categoryProvider;
-                         chatSettings = {
-                             modelKey: firstModelKey, model: modelInfo.model, provider: actualProvider,
-                             thinkingModel: modelInfo.thinking_model || null, thinkingMode: false,
-                             maxTokens: 2048, temperature: 1
-                         };
-                     } else {
-                         // Handle case where first provider has no models listed (except 'provider' key)
-                         chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
-                         console.warn("First model provider found, but no specific models listed.");
-                     }
-                } else {
-                     // Handle case where models haven't loaded or are empty
-                     chatSettings = { modelKey: "", model: "", provider: "", thinkingModel: null, thinkingMode: false, maxTokens: 2048, temperature: 1 };
-                    console.warn("Cannot reset settings to default model, models not loaded or empty.");
-                }
+                // Reset settings to defaults (using the helper function)
+                setInitialDefaultModel();
+                // Ensure defaults for non-model settings too
+                 chatSettings.maxTokens = 2048;
+                 chatSettings.temperature = 1;
+                 chatSettings.thinkingMode = false; // Start new chats with thinking off
 
-                 updateSettingsUI(); // Apply the reset settings to the UI
+                updateSettingsUI(); // Apply the reset settings to the UI
 
+                // Close sidebar on mobile when creating new chat
                  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
                      toggleSidebar();
                  }
-                 messageInput.focus();
+                 messageInput.focus(); // Focus input field
             }
 
             /**
              * Displays the welcome message, optionally forcing it even if messages exist.
+             * Clears the chat container before adding the welcome message.
              * @param {boolean} force - If true, always display welcome message.
              */
             function displayWelcomeMessage(force = false) {
-                 const welcome = document.getElementById('welcomeContainer');
-                 // Check if forcing, or if the chat container is empty, or only contains the welcome message itself
-                 if (force || chatContainer.children.length === 0 || (chatContainer.children.length === 1 && chatContainer.firstElementChild.id === 'welcomeContainer')) {
-                     chatContainer.innerHTML = ''; // Clear previous content
+                 const welcomeCheck = document.getElementById('welcomeContainer');
+                 // Check if forcing, OR if the chat container is empty, OR only contains the welcome message itself
+                 if (force || chatContainer.children.length === 0 || (chatContainer.children.length === 1 && welcomeCheck)) {
+                     chatContainer.innerHTML = ''; // Clear previous content first
                      const welcomeDiv = document.createElement('div');
                      welcomeDiv.className = 'welcome-container';
                      welcomeDiv.id = 'welcomeContainer'; // Ensure it has the ID for future checks
@@ -2032,41 +2232,53 @@
                      `;
                      welcomeDiv.style.display = 'flex'; // Ensure it's visible
                      chatContainer.appendChild(welcomeDiv);
-                 } else if (welcome) {
-                     // If messages exist and the welcome message is present, hide it
-                     welcome.style.display = 'none';
+                 } else if (welcomeCheck) {
+                     // If messages exist and the welcome message is somehow still present, hide it
+                     welcomeCheck.style.display = 'none';
                  }
-                 // If messages exist and no welcome message is present, do nothing
+                 // If messages exist and no welcome message is present, do nothing (leave messages visible)
              }
 
 
             function createNewChatEntry(firstMessageContent) {
-                const newChatId = Date.now();
+                const newChatId = Date.now(); // Use timestamp as ID
                 currentChatId = newChatId;
 
-                // Generate a title from the first message
-                const tempDiv = document.createElement('div');
-                tempDiv.textContent = firstMessageContent;
-                let title = tempDiv.textContent.length > 35
-                    ? tempDiv.textContent.substring(0, 35).trim() + '...'
-                    : tempDiv.textContent.trim();
+                // Generate a title from the first message (plain text version)
+                let title = firstMessageContent.length > 35
+                    ? firstMessageContent.substring(0, 35).trim() + '...'
+                    : firstMessageContent.trim();
                 if (!title) title = "Новый чат"; // Default title if first message is empty/whitespace
 
+                // Create the new chat object with deep copies of history and current settings
                 const newChat = {
                     id: newChatId,
                     title: title,
-                    // Ensure history and settings are deep copied
+                    // History *includes* the first user message that triggered this
                     history: JSON.parse(JSON.stringify(chatHistory)),
+                    // Settings are the *current* settings when the chat was initiated
                     settings: JSON.parse(JSON.stringify(chatSettings))
                 };
 
                 chats.unshift(newChat); // Add to the beginning (top of the list)
-                renderChatList(); // Re-render the list to include the new chat
+                saveChats(); // Persist the new chat list immediately
+                renderChatList(); // Re-render the list to include and highlight the new chat
                 chatTitleText.textContent = title; // Set header title
                 chatTitleText.title = `"${title}" - Двойной клик для переименования`; // Update tooltip
-                saveChats(); // Persist the new chat list
+                // No need to saveCurrentChatState() here, as new chat is saved in saveChats()
             }
+            warningChangeModelBtn.addEventListener('click', () => {
+                // 2. Directly open the model selection modal so the user can choose a new one
+                openModelSelectionModal();
+                // Note: We are NOT opening the main settings panel here,
+                // as the primary action required is selecting a model.
+                // The user can open the full settings panel separately if needed.
+            });
 
+            warningCloseBtn.addEventListener('click', () => {
+                // Simply hide the warning banner if the user chooses to ignore it for now
+                hideModelWarning();
+            });
             function renderChatList() {
                  chatList.innerHTML = ''; // Clear existing list
 
@@ -2075,7 +2287,7 @@
                       return;
                  }
 
-                 // Ensure chats are sorted newest first for rendering
+                 // Ensure chats are sorted newest first for rendering (should already be, but safe)
                  chats.sort((a, b) => b.id - a.id);
 
                  chats.forEach(chat => {
@@ -2094,36 +2306,40 @@
                      titleDiv.className = 'chat-title';
                      titleDiv.textContent = chat.title || "Без названия";
 
-                     // --- NEW: Add Delete Button ---
+                     // Add Delete Button for each chat item
                      const deleteBtn = document.createElement('button');
                      deleteBtn.className = 'delete-chat-btn';
-                     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Use a slightly different icon?
+                     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
                      deleteBtn.title = 'Удалить этот чат';
                      deleteBtn.dataset.chatId = chat.id; // Store ID for the handler
 
                      deleteBtn.addEventListener('click', (e) => {
                          e.stopPropagation(); // IMPORTANT: Prevent chat item click (loadChat)
                          const idToDelete = e.currentTarget.dataset.chatId;
+                         // Find the chat data using the ID
                          const chatToDelete = chats.find(c => String(c.id) === idToDelete);
                          if (chatToDelete) {
+                            // Call the handler with ID and title
                             confirmChatDeleteHandler(chatToDelete.id, chatToDelete.title);
                          } else {
                              console.error("Chat data not found for delete button:", idToDelete);
+                             showToast("Ошибка: Не удалось найти данные чата для удаления.", true);
                          }
                      });
-                     // --- END: Add Delete Button ---
 
                      chatItem.appendChild(iconDiv);
                      chatItem.appendChild(titleDiv);
                      chatItem.appendChild(deleteBtn); // Add the button to the item
 
                      chatItem.addEventListener('click', () => {
-                         // Prevent loading if renaming is active or if clicking the already active chat
+                         // Prevent loading if renaming is active
                          if (isRenaming) {
                              const renameInput = chatTitleContainer.querySelector('.rename-chat-input');
                              if (renameInput) renameInput.blur(); // Attempt to finish rename first
+                             showToast("Завершите переименование перед сменой чата.", false, 1500);
                              return; // Don't load chat while renaming
                          }
+                         // Load chat only if it's not the currently active one
                          if (chat.id !== currentChatId) {
                              loadChat(chat.id);
                          } else if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
@@ -2140,16 +2356,16 @@
                  // Prevent loading if renaming is active
                  if (isRenaming) {
                      const renameInput = chatTitleContainer.querySelector('.rename-chat-input');
-                     if (renameInput) renameInput.blur(); // Attempt to finish rename first
-                     // Optionally show a toast or prevent loading explicitly
-                     // showToast("Завершите переименование перед сменой чата.", true);
-                     // return; // Stop loading if renaming
+                     if (renameInput) renameInput.blur();
+                     showToast("Завершите переименование перед сменой чата.", false, 1500);
+                     return; // Stop loading if renaming
                  }
 
                  const chatToLoad = chats.find(c => c.id === chatId);
                  if (!chatToLoad) {
                      console.error("Chat not found:", chatId);
-                     showToast(`Чат с ID ${chatId} не найден.`, true);
+                     showToast(`Чат с ID ${chatId} не найден. Загрузка первого доступного чата.`, true);
+                     hideModelWarning(); // Hide warning if chat load fails
                      // Attempt to load the first available chat or create new if none exist
                      if (chats.length > 0) {
                          loadChat(chats[0].id);
@@ -2159,15 +2375,34 @@
                      return;
                  }
 
+                 // --- Hide any existing model warning before loading new chat data ---
+                 hideModelWarning();
+
                  currentChatId = chatToLoad.id;
                  // Deep copy history and settings to avoid mutation issues
                  chatHistory = Array.isArray(chatToLoad.history) ? JSON.parse(JSON.stringify(chatToLoad.history)) : [];
-                 // Ensure default settings are present if saved settings are incomplete
-                 chatSettings = {
+
+                 // Ensure default settings are present if saved settings are incomplete/missing
+                 const defaultSettings = {
                      modelKey: "", model: "", provider: "", thinkingModel: null,
                      thinkingMode: false, maxTokens: 2048, temperature: 1,
+                 };
+                 chatSettings = {
+                     ...defaultSettings, // Start with defaults
                      ...(chatToLoad.settings || {}) // Merge saved settings over defaults
                  };
+
+                 // --- Check if the loaded chat's model is still available ---
+                 if (chatSettings.modelKey && modelsData) { // Check only if modelsData is loaded
+                     if (!isModelKeyAvailable(chatSettings.modelKey)) {
+                         showModelWarning(chatSettings.modelKey); // Show warning if model not found
+                     }
+                     // If model *is* available, warning remains hidden
+                 } else if (chatSettings.modelKey && !modelsData) {
+                     // Models haven't loaded, can't check. Log warning but don't show UI warning.
+                     console.warn(`Cannot check model availability for chat ${chatId}, models not loaded yet.`);
+                 }
+                 // --- END: Model Check ---
 
                  const currentTitle = chatToLoad.title || "Без названия";
                  chatTitleText.textContent = currentTitle;
@@ -2175,13 +2410,13 @@
                  chatContainer.innerHTML = ''; // Clear previous chat messages
 
                  if (chatHistory.length > 0) {
-                    const welcome = document.getElementById('welcomeContainer');
-                    if(welcome) welcome.style.display = 'none'; // Hide welcome if messages exist
+                    displayWelcomeMessage(false); // Ensure welcome message is hidden if history exists
 
                     chatHistory.forEach(msg => {
-                        // Assign temporary ID if loaded message lacks one (for robustness)
+                        // Assign temporary ID if loaded message lacks one (for robustness, unlikely needed now)
                         if (!msg.id) msg.id = Date.now() + "-loaded-" + Math.random().toString(16).substring(2);
-                        addMessageToDOM(msg.role, msg.content, msg.id, msg.role === 'assistant' && msg.isError);
+                        // Render message (addMessageToDOM handles error styling based on isError flag if present)
+                        addMessageToDOM(msg.role, msg.content, msg.id, msg.isError === true);
                     });
                     updateLastMessageControls(); // Add regenerate button if applicable
                  } else {
@@ -2189,11 +2424,11 @@
                      displayWelcomeMessage(true); // Force display
                  }
 
-                 updateSettingsUI(); // Reflect the loaded chat's settings
-                 renderChatList(); // Re-render list to highlight the newly active chat
+                 updateSettingsUI(); // Reflect the loaded chat's settings in the panel
+                 renderChatList(); // Re-render sidebar list to highlight the newly active chat
 
                  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                     toggleSidebar(); // Close sidebar on mobile after loading
+                     toggleSidebar(); // Close sidebar on mobile after loading chat
                  }
                  messageInput.focus(); // Focus input field
              }
@@ -2204,39 +2439,40 @@
                      savedData = localStorage.getItem('aiChats');
                      if (savedData) {
                          chats = JSON.parse(savedData);
-                         // Basic validation
+                         // Basic validation: check if it's an array of objects with 'id'
                          if (!Array.isArray(chats) || !chats.every(c => typeof c === 'object' && c !== null && 'id' in c)) {
                             console.warn("Saved chats data is invalid, resetting.", chats);
                             chats = [];
-                            localStorage.removeItem('aiChats');
+                            localStorage.removeItem('aiChats'); // Clear invalid data
                          } else {
-                             chats.sort((a, b) => b.id - a.id); // Sort newest first by ID (timestamp)
+                             // Sort newest first by ID (timestamp) upon loading
+                             chats.sort((a, b) => b.id - a.id);
                          }
                      } else {
-                         chats = [];
+                         chats = []; // No saved data
                      }
                  } catch (e) {
                      console.error("Failed to parse or validate saved chats:", e, savedData);
-                     chats = [];
-                     localStorage.removeItem('aiChats'); // Clear corrupted data
+                     chats = []; // Reset on error
+                     localStorage.removeItem('aiChats'); // Clear potentially corrupted data
                  }
 
                  renderChatList(); // Render the loaded or empty list
 
-                 // Load the first chat if available and models are ready
+                 // Load the first chat (most recent) if available, but *only if models are ready*
                  if (chats.length > 0 && chats[0].id) {
-                      if (modelsData) { // Check if models are loaded
+                      if (modelsData) { // Check if models have been fetched and processed
                          loadChat(chats[0].id);
                       } else {
-                          // Models not ready yet, wait for fetchModelsAndSetup to call loadChats again
-                          console.log("Models not ready yet, deferring initial chat load.");
+                          // Models not ready yet. fetchModelsAndSetup will call loadChats again after success.
+                          console.log("Models not ready, deferring initial chat load.");
                           // Keep the placeholder visible
                           initChatListPlaceholder();
-                          // Display a temporary "New Chat" state until models load
-                          createNewChat();
+                          // Display a temporary "New Chat" state visually until models load
+                          createNewChat(); // Show the new chat UI elements
                       }
                  } else {
-                      // No saved chats, start with a new chat
+                      // No saved chats, start with a new chat interface
                       createNewChat();
                  }
             }
@@ -2248,32 +2484,39 @@
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
                     try {
-                        // Ensure chats are sorted before saving (optional, but consistent)
+                        // Ensure chats are sorted by ID (newest first) before saving
                         chats.sort((a, b) => b.id - a.id);
-                        localStorage.setItem('aiChats', JSON.stringify(chats));
+                        const dataToSave = JSON.stringify(chats);
+                        localStorage.setItem('aiChats', dataToSave);
                         console.log("Chats saved to localStorage.");
                     } catch (e) {
                         console.error("Failed to save chats to localStorage:", e);
-                        showToast("Ошибка: Не удалось сохранить чаты. Хранилище может быть переполнено.", true, 5000);
+                        // Check for QuotaExceededError
+                        if (e.name === 'QuotaExceededError') {
+                           showToast("Ошибка: Не удалось сохранить чаты. Хранилище браузера переполнено!", true, 5000);
+                        } else {
+                           showToast("Ошибка: Не удалось сохранить чаты.", true, 5000);
+                        }
                     }
-                }, 500); // Save 500ms after the last modification
+                }, 300); // Save 300ms after the last modification
             }
 
             function saveCurrentChatState() {
                  if (currentChatId !== null) {
                      const currentChatIndex = chats.findIndex(c => c.id === currentChatId);
                      if (currentChatIndex !== -1) {
-                         // Deep copy history and settings to prevent mutations
+                         // Update the chat object in the main 'chats' array
+                         // Use deep copies to prevent accidental direct mutation if needed elsewhere
                          chats[currentChatIndex].history = JSON.parse(JSON.stringify(chatHistory));
                          chats[currentChatIndex].settings = JSON.parse(JSON.stringify(chatSettings));
-                         // Title is updated separately via rename function
-                         saveChats(); // Trigger debounced save
+                         // Note: Title is updated separately via handleRenameChatTitle -> finishRename
+                         saveChats(); // Trigger debounced save of the entire chats array
                      } else {
+                         // This could happen if the chat was deleted while trying to save, or state mismatch
                          console.warn("Attempted to save state for a chat ID not found in the list:", currentChatId);
-                         // This could happen if a chat was deleted externally or state is corrupted
                      }
                  }
-                 // No need to save if currentChatId is null (it's a new, unsaved chat)
+                 // No save needed if currentChatId is null (it's a new, unsaved chat until first message)
             }
 
             function initChatListPlaceholder() {
@@ -2287,13 +2530,17 @@
             function toggleModal(modalElement, show) {
                  if (!modalElement) return;
                  modalElement.classList.toggle('visible', show);
-                 // Focus the first focusable element (e.g., confirm button) when opening modal? (Accessibility improvement)
-                 // if (show) {
-                 //    const focusable = modalElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-                 //    if (focusable) {
-                 //        setTimeout(() => focusable.focus(), 50); // Delay focus slightly
-                 //    }
-                 // }
+                 body.style.overflow = show ? 'hidden' : ''; // Prevent body scroll when modal is open
+
+                 // Focus management (optional, for accessibility)
+                 if (show) {
+                    const focusable = modalElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    if (focusable) {
+                        setTimeout(() => focusable.focus(), 50); // Delay focus slightly for transition
+                    }
+                 } else {
+                     // Return focus to the element that opened the modal? More complex.
+                 }
             }
 
             // --- Chat Title Renaming ---
@@ -2313,8 +2560,9 @@
                 input.type = 'text';
                 input.value = originalTitle;
                 input.className = 'rename-chat-input'; // Use class for styling
+                input.setAttribute('aria-label', 'Переименовать чат');
 
-                // Insert the input field into the DOM (e.g., after the mobile toggle)
+                // Insert the input field into the DOM (replace the H2 temporarily)
                 chatTitleContainer.insertBefore(input, chatTitleText); // Insert before hidden H2
 
                 input.focus();
@@ -2322,7 +2570,11 @@
 
                 // Function to finish renaming (save or cancel)
                 const finishRename = (save) => {
-                    if (!isRenaming) return; // Prevent double execution
+                    // Check if the input still exists and we are still in renaming mode
+                    if (!isRenaming || !input.parentNode) {
+                        // Renaming was already cancelled or interrupted
+                        return;
+                    }
 
                     let finalTitle = originalTitle; // Default to original if cancelling or error
 
@@ -2333,7 +2585,8 @@
                         // Find chat and update title in the main 'chats' array
                         const chatIndex = chats.findIndex(c => c.id === currentChatId);
                         if (chatIndex !== -1) {
-                            if (chats[chatIndex].title !== finalTitle) { // Only save if changed
+                            // Only save and re-render if the title actually changed
+                            if (chats[chatIndex].title !== finalTitle) {
                                 chats[chatIndex].title = finalTitle;
                                 saveChats();       // Save updated chats array to localStorage
                                 renderChatList();  // Update sidebar list to reflect new title
@@ -2357,28 +2610,72 @@
                     isRenaming = false; // Reset flag
                 };
 
-                // Add listeners to the input
-                input.addEventListener('blur', () => {
-                    // Delay slightly to allow potential click on other elements (like sidebar) to register first
-                    // If the click was on the sidebar chat item, loadChat will handle the blur first.
-                    // If the click was outside, this timeout will save.
+                // Use event listeners with capture phase or careful blur handling
+                const handleBlur = (e) => {
+                     // We need to ensure this doesn't trigger if we immediately click Enter/Escape
+                     // Using a small timeout allows Enter/Escape handlers to potentially run first and set isRenaming = false
                     setTimeout(() => {
-                        // Check if renaming is still active before saving (might have been cancelled by Esc)
+                        // Check if renaming is still active before saving on blur
                         if (isRenaming) {
-                            finishRename(true); // Save on blur
+                            finishRename(true);
                         }
-                    }, 100);
-                });
+                    }, 100); // Small delay
+                };
 
-                input.addEventListener('keydown', (e) => {
+                const handleKeydown = (e) => {
                     if (e.key === 'Enter') {
-                        e.preventDefault(); // Prevent form submission/newline
+                        e.preventDefault();
                         finishRename(true); // Save on Enter
                     } else if (e.key === 'Escape') {
+                        e.preventDefault(); // Prevent triggering other Escape listeners if needed
                         finishRename(false); // Cancel on Escape
                     }
-                });
+                };
+
+                input.addEventListener('blur', handleBlur);
+                input.addEventListener('keydown', handleKeydown);
             }
+
+             // --- NEW: Model Availability Check and Warning ---
+
+             /**
+              * Checks if a model key exists in the loaded modelsData.
+              * @param {string} modelKey The key to check (e.g., 'gpt-4-turbo').
+              * @returns {boolean} True if the model key is found, false otherwise.
+              */
+             function isModelKeyAvailable(modelKey) {
+                 if (!modelsData || !modelKey) return false; // Can't check if data or key is missing
+
+                 for (const providerKey in modelsData) {
+                     const providerInfo = modelsData[providerKey];
+                     // Check if providerInfo is an object and has the modelKey (and isn't the 'provider' meta-key itself)
+                     if (typeof providerInfo === 'object' && providerInfo !== null && providerInfo.hasOwnProperty(modelKey) && modelKey !== 'provider') {
+                         return true; // Found the modelKey within a provider
+                     }
+                 }
+                 // Model key not found in any provider
+                 return false;
+             }
+
+             /**
+              * Shows the model warning banner with the specified model name.
+              * @param {string} modelName The name of the unavailable model.
+              */
+             function showModelWarning(modelName) {
+                 if (!modelWarningBanner || !unavailableModelNameSpan) return;
+                 unavailableModelNameSpan.textContent = modelName || 'Неизвестная модель';
+                 modelWarningBanner.style.display = 'flex';
+             }
+
+             /**
+              * Hides the model warning banner.
+              */
+             function hideModelWarning() {
+                 if (modelWarningBanner) {
+                     modelWarningBanner.style.display = 'none';
+                 }
+             }
+
 
         });
     </script>
