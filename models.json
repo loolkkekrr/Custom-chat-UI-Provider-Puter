@@ -150,7 +150,8 @@
         "model": "openrouter:google/gemini-2.5-pro-preview-03-25"
       },
       "Gemini 2.5 Flash | EXPERIMENT": {
-        "model": "openrouter:google/gemini-2.5-pro-preview-03-25"
+        "model": "openrouter:google/gemini-2.5-pro-preview-03-25",
+        "thinking_model": "google/gemini-2.5-flash-preview:thinking"
       },
       "Gemini 2 Flash": {
         "model": "openrouter:google/gemini-2.0-flash-001"
@@ -161,11 +162,32 @@
       "Gemini 1.5 Pro": {
         "model": "openrouter:google/google/gemini-pro-1.5-exp"
       },
-      "Gemini Experiment 1114": {
-        "model": "openrouter:google/gemini-exp-1114"
+      "provider": "openrouter"
+    },
+    "Qwen": {
+      "Qwen 3 235B A22B": {
+        "model": "qwen3-235b-a22b"
       },
-      "Gemini Experiment 1121": {
-        "model": "openrouter:google/gemini-exp-1121"
+      "Qwen 3 32B": {
+        "model": "qwen/qwen3-32b"
+      },
+      "Qwen 3 30B A3B": {
+        "model": "qwen/qwen3-30b-a3b"
+      },
+      "Qwen 3 14B": {
+        "model": "qwen/qwen3-14b"
+      },
+      "Qwen 3 8B": {
+        "model": "qwen/qwen3-8b"
+      },
+      "Qwen 2.5 72B": {
+        "model": "eva-unit-01/eva-qwen-2.5-72b"
+      },
+      "Qwen 2.5 32B Instruct": {
+        "model": "qwen/qwen2.5-32b-instruct"
+      },
+      "Qwen 2.5 7B Instruct": {
+        "model": "qwen/qwen-2.5-7b-instruct"
       },
       "provider": "openrouter"
     }
